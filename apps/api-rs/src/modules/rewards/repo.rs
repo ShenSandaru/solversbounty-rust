@@ -119,11 +119,7 @@ pub async fn record_send(
     Ok(RecordSendResult::Recorded)
 }
 
-pub async fn note_retryable(
-    pool: &PgPool,
-    id: Uuid,
-    signature: &str,
-) -> Result<(), sqlx::Error> {
+pub async fn note_retryable(pool: &PgPool, id: Uuid, signature: &str) -> Result<(), sqlx::Error> {
     let mut tx = pool.begin().await?;
     lock_payout(&mut tx, id).await?;
     sqlx::query(&format!(
@@ -238,7 +234,10 @@ pub async fn note_last_error(pool: &PgPool, id: Uuid, message: &str) -> Result<(
     Ok(())
 }
 
-pub async fn solver_payouts(pool: &PgPool, solver_id: Uuid) -> Result<Vec<serde_json::Value>, sqlx::Error> {
+pub async fn solver_payouts(
+    pool: &PgPool,
+    solver_id: Uuid,
+) -> Result<Vec<serde_json::Value>, sqlx::Error> {
     let rows = sqlx::query(&format!(
         "SELECT p.id, a.bounty_id, a.amount_lamports, p.status::text, c.signature
          FROM {payouts} p
@@ -402,7 +401,10 @@ pub async fn admin_payouts(pool: &PgPool) -> Result<Vec<serde_json::Value>, sqlx
         .collect())
 }
 
-async fn lock_payout(tx: &mut Transaction<'_, sqlx::Postgres>, id: Uuid) -> Result<(), sqlx::Error> {
+async fn lock_payout(
+    tx: &mut Transaction<'_, sqlx::Postgres>,
+    id: Uuid,
+) -> Result<(), sqlx::Error> {
     sqlx::query(&format!(
         "SELECT id FROM {table} WHERE id = $1 FOR UPDATE",
         table = tables::PAYOUTS

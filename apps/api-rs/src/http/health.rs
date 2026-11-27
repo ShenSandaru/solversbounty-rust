@@ -83,19 +83,25 @@ mod tests {
             rate_limit: Arc::new(tokio::sync::Mutex::new(
                 crate::modules::anti_abuse::InMemoryRateLimit::new(),
             )),
-            payout_worker: Arc::new(crate::modules::rewards::payout_worker::PayoutWorker::disabled()),
+            payout_worker: Arc::new(
+                crate::modules::rewards::payout_worker::PayoutWorker::disabled(),
+            ),
         }
     }
 
     #[tokio::test]
     async fn ready_when_not_configured() {
-        let response = readiness(State(test_state(DatabaseStatus::NotConfigured))).await.into_response();
+        let response = readiness(State(test_state(DatabaseStatus::NotConfigured)))
+            .await
+            .into_response();
         assert_eq!(response.status(), StatusCode::OK);
     }
 
     #[tokio::test]
     async fn not_ready_when_down() {
-        let response = readiness(State(test_state(DatabaseStatus::Down))).await.into_response();
+        let response = readiness(State(test_state(DatabaseStatus::Down)))
+            .await
+            .into_response();
         assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
     }
 }

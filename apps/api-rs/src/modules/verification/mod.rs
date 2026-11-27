@@ -21,15 +21,11 @@ impl VerificationMethod {
 pub fn answers_match(method: VerificationMethod, expected: &str, submitted: &str) -> bool {
     match method {
         VerificationMethod::Exact => submitted == expected,
-        VerificationMethod::CaseInsensitive => {
-            submitted.to_lowercase() == expected.to_lowercase()
-        }
+        VerificationMethod::CaseInsensitive => submitted.to_lowercase() == expected.to_lowercase(),
         VerificationMethod::NormalizedText => {
             normalize_space(submitted) == normalize_space(expected)
         }
-        VerificationMethod::NumericExact => {
-            numeric_text(submitted) == numeric_text(expected)
-        }
+        VerificationMethod::NumericExact => numeric_text(submitted) == numeric_text(expected),
     }
 }
 
@@ -89,7 +85,7 @@ fn regex_numeric(trimmed: &str) -> bool {
         }
         i += 1;
     }
-  if trimmed == "-" {
+    if trimmed == "-" {
         return false;
     }
     !trimmed.ends_with('.')
@@ -142,8 +138,16 @@ mod tests {
 
     #[test]
     fn numeric_exact_rules() {
-        assert!(answers_match(VerificationMethod::NumericExact, "42", " 42 "));
-        assert!(!answers_match(VerificationMethod::NumericExact, "42", "42.0"));
+        assert!(answers_match(
+            VerificationMethod::NumericExact,
+            "42",
+            " 42 "
+        ));
+        assert!(!answers_match(
+            VerificationMethod::NumericExact,
+            "42",
+            "42.0"
+        ));
         assert!(!answers_match(
             VerificationMethod::NumericExact,
             "42",

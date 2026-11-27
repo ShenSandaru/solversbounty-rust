@@ -114,13 +114,7 @@ pub fn is_devnet_rpc(url: &str) -> bool {
         return false;
     };
     let host = parsed.host_str().unwrap_or("").to_lowercase();
-    let text = format!(
-        "{}{}{}",
-        host,
-        parsed.path(),
-        parsed.query().unwrap_or("")
-    )
-    .to_lowercase();
+    let text = format!("{}{}{}", host, parsed.path(), parsed.query().unwrap_or("")).to_lowercase();
     text.contains("devnet") && !text.contains("mainnet")
 }
 
@@ -208,10 +202,7 @@ fn read_memo(instructions: &[Value]) -> Option<String> {
         }
         if let Some(s) = instruction.get("parsed").and_then(|p| p.as_str()) {
             memos.push(s.to_string());
-        } else if let Some(s) = instruction
-            .pointer("/parsed/info")
-            .and_then(|p| p.as_str())
-        {
+        } else if let Some(s) = instruction.pointer("/parsed/info").and_then(|p| p.as_str()) {
             memos.push(s.to_string());
         }
     }

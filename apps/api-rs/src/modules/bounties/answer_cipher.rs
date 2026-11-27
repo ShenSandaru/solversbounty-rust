@@ -58,19 +58,24 @@ pub fn encrypt_answer(plaintext: &str, key: &[u8]) -> Result<String, CipherError
 
 pub fn decrypt_answer(payload: &str, key: &[u8]) -> Result<String, CipherError> {
     let parts: Vec<&str> = payload.split('.').collect();
-    if parts.len() != 4 || parts[0] != "v1" || parts[1].is_empty() || parts[2].is_empty() || parts[3].is_empty() {
+    if parts.len() != 4
+        || parts[0] != "v1"
+        || parts[1].is_empty()
+        || parts[2].is_empty()
+        || parts[3].is_empty()
+    {
         return Err(internal());
     }
     let cipher = Aes256Gcm::new_from_slice(key).map_err(|_| internal())?;
-    let nonce_bytes = URL_SAFE_NO_PAD
-        .decode(parts[1])
-        .map_err(|_| internal())?;
+    let nonce_bytes = URL_SAFE_NO_PAD.decode(parts[1]).map_err(|_| internal())?;
     let ct = URL_SAFE_NO_PAD.decode(parts[2]).map_err(|_| internal())?;
     let tag = URL_SAFE_NO_PAD.decode(parts[3]).map_err(|_| internal())?;
     let mut combined = ct;
     combined.extend_from_slice(&tag);
     let nonce = Nonce::from_slice(&nonce_bytes);
-    let plain = cipher.decrypt(nonce, combined.as_ref()).map_err(|_| internal())?;
+    let plain = cipher
+        .decrypt(nonce, combined.as_ref())
+        .map_err(|_| internal())?;
     String::from_utf8(plain).map_err(|_| internal())
 }
 

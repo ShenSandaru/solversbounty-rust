@@ -54,12 +54,8 @@ pub fn sign_payout_transfer(input: SignPayoutInput<'_>) -> Option<SignedPayout> 
     }
 
     // Account keys: treasury (signer+writable), destination (writable), system, memo.
-    let account_keys: [[u8; 32]; 4] = [
-        treasury_bytes,
-        destination,
-        SYSTEM_PROGRAM_ID,
-        memo_program,
-    ];
+    let account_keys: [[u8; 32]; 4] =
+        [treasury_bytes, destination, SYSTEM_PROGRAM_ID, memo_program];
 
     let transfer_data = {
         let mut data = Vec::with_capacity(12);
@@ -227,7 +223,10 @@ mod tests {
         assert!(signed.serialized.len() > 64);
         // shortvec(1) + 64-byte sig + message header byte
         assert_eq!(signed.serialized[0], 1);
-        assert_eq!(&signed.serialized[1..65], &bs58::decode(&signed.signature).into_vec().unwrap()[..]);
+        assert_eq!(
+            &signed.serialized[1..65],
+            &bs58::decode(&signed.signature).into_vec().unwrap()[..]
+        );
     }
 
     #[test]

@@ -21,10 +21,16 @@ pub fn router(state: AppState) -> Router {
         .route("/auth/login", post(auth::login))
         .route("/auth/session", get(auth::session))
         .route("/auth/logout", post(auth::logout))
-        .route("/bounties", post(bounties::create_bounty).get(bounties::list_bounties))
+        .route(
+            "/bounties",
+            post(bounties::create_bounty).get(bounties::list_bounties),
+        )
         .route("/bounties/mine", get(bounties::mine_bounties))
         .route("/bounties/{id}/public", get(bounties::public_bounty))
-        .route("/bounties/{id}", get(bounties::private_bounty).patch(bounties::patch_bounty))
+        .route(
+            "/bounties/{id}",
+            get(bounties::private_bounty).patch(bounties::patch_bounty),
+        )
         .route("/bounties/{id}/funding", get(bounties::funding_view))
         .route(
             "/bounties/{id}/funding/{purpose}",
@@ -36,7 +42,10 @@ pub fn router(state: AppState) -> Router {
         .route("/bounties/{id}/analytics", get(bounties::bounty_analytics))
         .route("/sessions/{id}", get(submissions::read_session))
         .route("/sessions/{id}/result", get(submissions::session_result))
-        .route("/sessions/{id}/submissions", post(submissions::submit_answer))
+        .route(
+            "/sessions/{id}/submissions",
+            post(submissions::submit_answer),
+        )
         .route("/payouts/mine", get(rewards::payouts_mine))
         .route("/bounties/{id}/payouts", get(rewards::bounty_payouts))
         .route("/admin/payouts", get(rewards::admin_payouts))

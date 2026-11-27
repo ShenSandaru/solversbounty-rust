@@ -7,7 +7,9 @@ use crate::modules::bounties::capacity::{capacity_decision, CapacityDecision, Ca
 use crate::modules::bounties::dto::{
     OwnerBounty, PublicBountyRecord, StoredAttempt, StoredObligation, StoredSession,
 };
-use crate::modules::bounties::funding_ledger::{buckets_from_entries, deposit_reference, LedgerEntry};
+use crate::modules::bounties::funding_ledger::{
+    buckets_from_entries, deposit_reference, LedgerEntry,
+};
 use crate::modules::bounties::lamports::{commission_lamports, principal_lamports};
 use crate::modules::bounties::validate::BountyWrite;
 
@@ -165,7 +167,10 @@ pub async fn close_past_deadline(pool: &PgPool, now: DateTime<Utc>) -> Result<()
     Ok(())
 }
 
-pub async fn list_active(pool: &PgPool, now: DateTime<Utc>) -> Result<Vec<PublicBountyRecord>, sqlx::Error> {
+pub async fn list_active(
+    pool: &PgPool,
+    now: DateTime<Utc>,
+) -> Result<Vec<PublicBountyRecord>, sqlx::Error> {
     close_past_deadline(pool, now).await?;
     let rows = sqlx::query(&format!(
         "SELECT b.id, b.title, b.description, b.instructions, b.category::text, b.status::text,
@@ -238,7 +243,10 @@ pub async fn ensure_funding(
     if status == "closed" {
         return Ok(Err("closed"));
     }
-    for (purpose, amount) in [("reward_pool", expected_reward_pool), ("commission", expected_commission)] {
+    for (purpose, amount) in [
+        ("reward_pool", expected_reward_pool),
+        ("commission", expected_commission),
+    ] {
         let existing: Option<(Uuid, Option<Uuid>, String, i64)> = sqlx::query_as(&format!(
             "SELECT id, chain_transaction_id, status::text, expected_lamports FROM {table}
              WHERE bounty_id = $1 AND purpose = $2::funding_purpose",
@@ -276,7 +284,9 @@ pub async fn ensure_funding(
         }
     }
     tx.commit().await?;
-    load_funding_snapshot(pool, bounty_id, creator_id).await.map(Ok)
+    load_funding_snapshot(pool, bounty_id, creator_id)
+        .await
+        .map(Ok)
 }
 
 pub async fn load_funding_snapshot(
@@ -378,12 +388,10 @@ pub async fn apply_funding(
     if other_use.is_some() {
         return Ok(ApplyFundingResult::SignatureInUse);
     }
-    let chain_id: Uuid = if let Some((id,)) = sqlx::query_as::<_, (Uuid,)>(
-        &format!(
-            "SELECT id FROM {table} WHERE signature = $1",
-            table = tables::CHAIN_TRANSACTIONS
-        ),
-    )
+    let chain_id: Uuid = if let Some((id,)) = sqlx::query_as::<_, (Uuid,)>(&format!(
+        "SELECT id FROM {table} WHERE signature = $1",
+        table = tables::CHAIN_TRANSACTIONS
+    ))
     .bind(&input.signature)
     .fetch_optional(&mut *tx)
     .await?
@@ -723,7 +731,12 @@ pub async fn verification_material(
     .bind(solver_id)
     .fetch_optional(pool)
     .await?;
-    Ok(row.map(|r| (r.get("expected_answer_ciphertext"), r.get("verification_method"))))
+    Ok(row.map(|r| {
+        (
+            r.get("expected_answer_ciphertext"),
+            r.get("verification_method"),
+        )
+    }))
 }
 
 pub enum SubmitAnswerResult {
@@ -1014,7 +1027,11 @@ async fn load_owner(
         query.push_str(" AND b.creator_id = $2");
     }
     let row = if let Some(cid) = creator_id {
-        sqlx::query(&query).bind(id).bind(cid).fetch_one(pool).await?
+        sqlx::query(&query)
+            .bind(id)
+            .bind(cid)
+            .fetch_one(pool)
+            .await?
     } else {
         sqlx::query(&query).bind(id).fetch_one(pool).await?
     };
@@ -1060,7 +1077,10 @@ fn read_public_row(row: &sqlx::postgres::PgRow) -> PublicBountyRecord {
     }
 }
 
-async fn load_obligations(pool: &PgPool, bounty_id: Uuid) -> Result<Vec<StoredObligation>, sqlx::Error> {
+async fn load_obligations(
+    pool: &PgPool,
+    bounty_id: Uuid,
+) -> Result<Vec<StoredObligation>, sqlx::Error> {
     let rows = sqlx::query(&format!(
         "SELECT f.purpose::text, f.deposit_reference, f.expected_lamports, f.observed_lamports, f.status::text,
          c.signature, c.commitment FROM {fundings} f
@@ -1127,7 +1147,11 @@ async fn load_buckets_tx(
     Ok(buckets_from_entries(&entries))
 }
 
-async fn load_session(pool: &PgPool, session_id: Uuid, solver_id: Uuid) -> Result<Option<StoredSession>, sqlx::Error> {
+async fn load_session(
+    pool: &PgPool,
+    session_id: Uuid,
+    solver_id: Uuid,
+) -> Result<Option<StoredSession>, sqlx::Error> {
     let row = sqlx::query(&format!(
         "SELECT s.id, s.bounty_id, s.solver_id, s.status::text, s.started_at,
          b.title, b.instructions, b.attempt_limit, b.reward_lamports, b.deadline,
@@ -1183,7 +1207,10 @@ async fn load_session(pool: &PgPool, session_id: Uuid, solver_id: Uuid) -> Resul
     }))
 }
 
-async fn lock_bounty(tx: &mut Transaction<'_, Postgres>, bounty_id: Uuid) -> Result<(), sqlx::Error> {
+async fn lock_bounty(
+    tx: &mut Transaction<'_, Postgres>,
+    bounty_id: Uuid,
+) -> Result<(), sqlx::Error> {
     sqlx::query(&format!(
         "SELECT id FROM {table} WHERE id = $1 FOR UPDATE",
         table = tables::BOUNTIES

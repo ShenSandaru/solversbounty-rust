@@ -104,8 +104,8 @@ pub async fn login(
     validate_wallet(&body.wallet_address)?;
     let pool = state.require_pool()?;
     let wallet = canonical_wallet_address(&body.wallet_address).map_err(|_| validation_wallet())?;
-    let sig_bytes =
-        decode_signature(&body.signature).map_err(|_| ApiError::auth_rejected("Authentication failed."))?;
+    let sig_bytes = decode_signature(&body.signature)
+        .map_err(|_| ApiError::auth_rejected("Authentication failed."))?;
     let now = Utc::now();
     let active = repo::find_active_nonce(pool, &wallet, now)
         .await
@@ -150,15 +150,11 @@ pub async fn login(
     Ok((StatusCode::OK, set_cookies(cookies), Json(body)).into_response())
 }
 
-pub async fn session(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> ApiResult<Response> {
+pub async fn session(State(state): State<AppState>, headers: HeaderMap) -> ApiResult<Response> {
     let pool = state.require_pool()?;
     let cookie = headers.get("cookie").and_then(|v| v.to_str().ok());
-    let token = read_session_cookie(cookie).ok_or_else(|| {
-        ApiError::unauthenticated("Session cookie is missing.")
-    })?;
+    let token = read_session_cookie(cookie)
+        .ok_or_else(|| ApiError::unauthenticated("Session cookie is missing."))?;
     let user = repo::find_active_session(pool, &hash_session_token(&token), Utc::now())
         .await
         .map_err(|_| ApiError::internal())?
@@ -189,10 +185,7 @@ pub async fn session(
     }
 }
 
-pub async fn logout(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> ApiResult<Response> {
+pub async fn logout(State(state): State<AppState>, headers: HeaderMap) -> ApiResult<Response> {
     let pool = state.require_pool()?;
     let cookie = headers.get("cookie").and_then(|v| v.to_str().ok());
     let csrf = headers.get(CSRF_HEADER).and_then(|v| v.to_str().ok());

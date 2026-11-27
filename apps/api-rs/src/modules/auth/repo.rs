@@ -50,7 +50,7 @@ pub async fn find_active_nonce(
     user_wallet: &str,
     now: DateTime<Utc>,
 ) -> Result<Option<StoredNonce>, sqlx::Error> {
-  let row: Option<(String, DateTime<Utc>)> = sqlx::query_as(&format!(
+    let row: Option<(String, DateTime<Utc>)> = sqlx::query_as(&format!(
         "SELECT nonce, expires_at FROM {table}
          WHERE user_wallet = $1 AND used_at IS NULL AND retired_at IS NULL AND expires_at > $2
          ORDER BY expires_at DESC LIMIT 1",
@@ -73,7 +73,16 @@ pub async fn consume_login(
     now: DateTime<Utc>,
 ) -> Result<Option<AuthUser>, sqlx::Error> {
     let mut tx = pool.begin().await?;
-    let saved = consume_login_tx(&mut tx, user_wallet, nonce, role, refresh_token_hash, session_expires_at, now).await?;
+    let saved = consume_login_tx(
+        &mut tx,
+        user_wallet,
+        nonce,
+        role,
+        refresh_token_hash,
+        session_expires_at,
+        now,
+    )
+    .await?;
     if saved.is_some() {
         tx.commit().await?;
     }

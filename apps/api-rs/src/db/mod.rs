@@ -16,11 +16,7 @@ pub async fn connect_optional(config: &AppConfig) -> (Option<PgPool>, DatabaseSt
     let Some(url) = config.database_url.as_ref() else {
         return (None, DatabaseStatus::NotConfigured);
     };
-    match PgPoolOptions::new()
-        .max_connections(5)
-        .connect(url)
-        .await
-    {
+    match PgPoolOptions::new().max_connections(5).connect(url).await {
         Ok(pool) => {
             if sqlx::query("SELECT 1").execute(&pool).await.is_err() {
                 error!("Database ping failed");

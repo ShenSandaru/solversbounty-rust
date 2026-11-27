@@ -66,7 +66,8 @@ impl SolanaGateway for MockSolanaGateway {
     }
 
     async fn submit(&self, _signed_tx: &[u8]) -> bool {
-        self.submits.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        self.submits
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         true
     }
 

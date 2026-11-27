@@ -122,15 +122,18 @@ pub fn parse_create_input(
     if deadline.is_none() || deadline.unwrap() <= now {
         issues.push(ApiIssue {
             path: "deadline".into(),
-            message: "Choose a deadline in the future. The server clock is authoritative later.".into(),
+            message: "Choose a deadline in the future. The server clock is authoritative later."
+                .into(),
         });
     }
     if !issues.is_empty() {
         return Err(ApiError::validation("Validation failed.", issues));
     }
     let reward_lamports = reward_lamports.unwrap();
-    let principal =
-        crate::modules::bounties::lamports::principal_lamports(reward_lamports, input.max_rewarded_solvers);
+    let principal = crate::modules::bounties::lamports::principal_lamports(
+        reward_lamports,
+        input.max_rewarded_solvers,
+    );
     if principal <= 0 || principal > MAX_PRINCIPAL_LAMPORTS {
         issues.push(ApiIssue {
             path: "rewardSol".into(),
@@ -139,7 +142,8 @@ pub fn parse_create_input(
         return Err(ApiError::validation("Validation failed.", issues));
     }
     let ciphertext = encrypt(expected).map_err(|e| ApiError {
-        status: axum::http::StatusCode::from_u16(e.status).unwrap_or(axum::http::StatusCode::SERVICE_UNAVAILABLE),
+        status: axum::http::StatusCode::from_u16(e.status)
+            .unwrap_or(axum::http::StatusCode::SERVICE_UNAVAILABLE),
         code: match e.code {
             "NOT_READY" => crate::http::error::ApiErrorCode::NotReady,
             _ => crate::http::error::ApiErrorCode::Internal,

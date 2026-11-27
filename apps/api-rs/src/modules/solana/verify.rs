@@ -21,9 +21,7 @@ pub fn canonical_wallet_address(value: &str) -> Result<String, WalletAddressErro
 }
 
 pub fn decode_signature(value: &str) -> Result<Vec<u8>, SignatureError> {
-    let bytes = URL_SAFE_NO_PAD
-        .decode(value)
-        .map_err(|_| SignatureError)?;
+    let bytes = URL_SAFE_NO_PAD.decode(value).map_err(|_| SignatureError)?;
     if bytes.len() != 64 {
         return Err(SignatureError);
     }
@@ -34,11 +32,7 @@ pub fn decode_signature(value: &str) -> Result<Vec<u8>, SignatureError> {
     Ok(bytes)
 }
 
-pub fn verify_wallet_signature(
-    wallet_address: &str,
-    message: &str,
-    signature: &[u8],
-) -> bool {
+pub fn verify_wallet_signature(wallet_address: &str, message: &str, signature: &[u8]) -> bool {
     if signature.len() != 64 {
         return false;
     }
@@ -90,10 +84,11 @@ mod tests {
         let other = SigningKey::generate(&mut OsRng);
         let other_wallet = bs58::encode(other.verifying_key().as_bytes()).into_string();
         assert!(!verify_wallet_signature(&other_wallet, message, &signature));
-        assert!(!verify_wallet_signature(&address, message, &signature[..32]));
-        assert!(decode_signature(
-            &URL_SAFE_NO_PAD.encode(&signature[..32])
-        )
-        .is_err());
+        assert!(!verify_wallet_signature(
+            &address,
+            message,
+            &signature[..32]
+        ));
+        assert!(decode_signature(&URL_SAFE_NO_PAD.encode(&signature[..32])).is_err());
     }
 }

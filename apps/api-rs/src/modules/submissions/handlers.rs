@@ -146,15 +146,11 @@ pub async fn submit_answer(
         SubmitAnswerResult::Inactive => Err(ApiError::conflict(
             "This bounty is not open for another attempt.",
         )),
-        SubmitAnswerResult::Limit | SubmitAnswerResult::Completed => Err(ApiError::conflict(
-            "This solving session is complete.",
-        )),
+        SubmitAnswerResult::Limit | SubmitAnswerResult::Completed => {
+            Err(ApiError::conflict("This solving session is complete."))
+        }
         SubmitAnswerResult::Stored(session) => {
-            if session
-                .attempts
-                .last()
-                .is_some_and(|a| a.reward_reserved)
-            {
+            if session.attempts.last().is_some_and(|a| a.reward_reserved) {
                 state.payout_worker.nudge().await;
             }
             Ok(Json(session_view(&session)))

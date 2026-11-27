@@ -46,7 +46,9 @@ pub fn load_from_env() -> Result<AppConfig, ConfigError> {
         .parse()
         .map_err(|_| ConfigError::Message("PORT must be a positive integer.".into()))?;
     if port == 0 {
-        return Err(ConfigError::Message("PORT must be a positive integer.".into()));
+        return Err(ConfigError::Message(
+            "PORT must be a positive integer.".into(),
+        ));
     }
 
     let database_url = blank_to_none(env_var("DATABASE_URL"));
@@ -66,11 +68,8 @@ pub fn load_from_env() -> Result<AppConfig, ConfigError> {
         .unwrap_or_else(|| "http://localhost:3000".into());
     let (login_domain, login_uri) = login_origin_from_url(&login_origin)?;
 
-    let json_body_limit_bytes = parse_body_limit(
-        env_var("JSON_BODY_LIMIT")
-            .as_deref()
-            .unwrap_or("64kb"),
-    );
+    let json_body_limit_bytes =
+        parse_body_limit(env_var("JSON_BODY_LIMIT").as_deref().unwrap_or("64kb"));
 
     let payout_broadcast_enabled =
         parse_bool_env(env_var("PAYOUT_BROADCAST_ENABLED").as_deref()).unwrap_or(false);

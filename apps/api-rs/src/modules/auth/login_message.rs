@@ -20,10 +20,17 @@ pub fn build_login_message(input: &LoginMessageInput) -> String {
         &format!("Domain: {}", input.domain),
         &format!("URI: {}", input.uri),
         &format!("Nonce: {}", input.nonce),
-        &format!("Issued At: {}", input.issued_at.to_rfc3339_opts(chrono::SecondsFormat::Millis, true)),
+        &format!(
+            "Issued At: {}",
+            input
+                .issued_at
+                .to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
+        ),
         &format!(
             "Expiration Time: {}",
-            input.expires_at.to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
+            input
+                .expires_at
+                .to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
         ),
         &format!("Chain: {LOGIN_CHAIN}"),
     ]

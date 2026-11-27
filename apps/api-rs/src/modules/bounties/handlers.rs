@@ -14,9 +14,7 @@ use crate::modules::bounties::answer_cipher::{decrypt_answer, encrypt_answer, pa
 use crate::modules::bounties::dto::{funding_view as funding_view_json, private_json, public_json};
 use crate::modules::bounties::funding::normalize_funding_purpose;
 use crate::modules::bounties::funding_match::match_obligation;
-use crate::modules::bounties::repo::{
-    self, ApplyFundingInput, ApplyFundingResult,
-};
+use crate::modules::bounties::repo::{self, ApplyFundingInput, ApplyFundingResult};
 use crate::modules::bounties::validate::{parse_create_input, CreateBountyInput};
 use crate::modules::solana::gateway::TransferOutcome;
 use crate::AppState;
@@ -42,8 +40,8 @@ pub async fn create_bounty(
     let row = repo::create_bounty(pool, user.id, &write)
         .await
         .map_err(|_| ApiError::internal())?;
-    let expected = decrypt_answer(&row.expected_answer_ciphertext, &key)
-        .map_err(|_| ApiError::internal())?;
+    let expected =
+        decrypt_answer(&row.expected_answer_ciphertext, &key).map_err(|_| ApiError::internal())?;
     Ok(Json(private_json(&row, &expected)))
 }
 
@@ -116,8 +114,8 @@ pub async fn private_bounty(
         .map_err(|_| ApiError::internal())?
         .ok_or_else(|| ApiError::not_found("Bounty not found."))?;
     let key = answer_key(&state)?;
-    let expected = decrypt_answer(&row.expected_answer_ciphertext, &key)
-        .map_err(|_| ApiError::internal())?;
+    let expected =
+        decrypt_answer(&row.expected_answer_ciphertext, &key).map_err(|_| ApiError::internal())?;
     Ok(Json(private_json(&row, &expected)))
 }
 
@@ -145,9 +143,7 @@ pub async fn patch_bounty(
             Ok(Json(private_json(&row, &expected)))
         }
         Err("missing") => Err(ApiError::not_found("Bounty not found.")),
-        Err("not_draft") => Err(ApiError::conflict(
-            "Only draft bounties can be edited.",
-        )),
+        Err("not_draft") => Err(ApiError::conflict("Only draft bounties can be edited.")),
         Err(_) => Err(ApiError::internal()),
     }
 }
@@ -161,11 +157,7 @@ pub async fn funding_view(
     let user = resolve_auth_user(pool, &headers).await?;
     let id = parse_uuid(&id)?;
     let snapshot = prepare_funding(&state, pool, id, user.id).await?;
-    let treasury = state
-        .config
-        .treasury_public_key
-        .clone()
-        .unwrap_or_default();
+    let treasury = state.config.treasury_public_key.clone().unwrap_or_default();
     Ok(Json(funding_view_json(
         &snapshot.bounty,
         &snapshot.obligations,
@@ -254,7 +246,9 @@ pub async fn submit_funding(
         ));
     }
     if transfer.cluster != "devnet" {
-        return Err(ApiError::conflict("The transaction is not on Solana Devnet."));
+        return Err(ApiError::conflict(
+            "The transaction is not on Solana Devnet.",
+        ));
     }
     if transfer.failed {
         let _ = repo::apply_funding(
@@ -277,7 +271,9 @@ pub async fn submit_funding(
             },
         )
         .await;
-        return Err(ApiError::conflict("The transaction failed on Solana Devnet."));
+        return Err(ApiError::conflict(
+            "The transaction failed on Solana Devnet.",
+        ));
     }
     let matched = match_obligation(
         &transfer,
@@ -410,7 +406,8 @@ async fn prepare_funding(
 
 fn answer_key(state: &AppState) -> ApiResult<Vec<u8>> {
     parse_answer_key(state.config.answer_encryption_key.as_deref()).map_err(|e| ApiError {
-        status: axum::http::StatusCode::from_u16(e.status).unwrap_or(axum::http::StatusCode::SERVICE_UNAVAILABLE),
+        status: axum::http::StatusCode::from_u16(e.status)
+            .unwrap_or(axum::http::StatusCode::SERVICE_UNAVAILABLE),
         code: crate::http::error::ApiErrorCode::NotReady,
         message: e.message,
         issues: None,
@@ -434,7 +431,7 @@ fn parse_uuid(value: &str) -> ApiResult<Uuid> {
 fn is_base58_signature(value: &str) -> bool {
     let len = value.len();
     (64..=88).contains(&len)
-        && value
-            .chars()
-            .all(|c| matches!(c, '1'..='9' | 'A'..='H' | 'J'..='N' | 'P'..='Z' | 'a'..='k' | 'm'..='z'))
+        && value.chars().all(
+            |c| matches!(c, '1'..='9' | 'A'..='H' | 'J'..='N' | 'P'..='Z' | 'a'..='k' | 'm'..='z'),
+        )
 }

@@ -67,7 +67,13 @@ pub fn csrf_tokens_match(cookie_header: Option<&str>, provided: Option<&str>) ->
     left.ct_eq(right).into()
 }
 
-fn cookie_line(name: &str, token: &str, max_age_seconds: i64, secure: bool, http_only: bool) -> String {
+fn cookie_line(
+    name: &str,
+    token: &str,
+    max_age_seconds: i64,
+    secure: bool,
+    http_only: bool,
+) -> String {
     let encoded = percent_encode_cookie_value(token);
     let mut parts = vec![
         format!("{name}={encoded}"),

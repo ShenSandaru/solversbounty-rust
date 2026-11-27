@@ -12,11 +12,7 @@ thread_local! {
 }
 
 pub fn current_request_id() -> String {
-    REQUEST_ID.with(|id| {
-        id.borrow()
-            .clone()
-            .unwrap_or_else(|| "unknown".to_string())
-    })
+    REQUEST_ID.with(|id| id.borrow().clone().unwrap_or_else(|| "unknown".to_string()))
 }
 
 pub async fn request_id(mut request: Request, next: Next) -> Response {

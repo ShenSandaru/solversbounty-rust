@@ -38,22 +38,25 @@ impl PayoutWorker {
     }
 
     pub fn disabled() -> Self {
-        Self::new(None, Arc::new(crate::config::AppConfig {
-            node_env: crate::config::NodeEnv::Test,
-            port: 3001,
-            database_url: None,
-            cors_origins: vec!["http://localhost:3000".into()],
-            json_body_limit_bytes: 65536,
-            auth_token_secret: None,
-            answer_encryption_key: None,
-            treasury_secret_key: None,
-            treasury_public_key: None,
-            payout_broadcast_enabled: false,
-            admin_wallet_allowlist: vec![],
-            solana_rpc_url: None,
-            login_domain: "localhost:3000".into(),
-            login_uri: "http://localhost:3000".into(),
-        }))
+        Self::new(
+            None,
+            Arc::new(crate::config::AppConfig {
+                node_env: crate::config::NodeEnv::Test,
+                port: 3001,
+                database_url: None,
+                cors_origins: vec!["http://localhost:3000".into()],
+                json_body_limit_bytes: 65536,
+                auth_token_secret: None,
+                answer_encryption_key: None,
+                treasury_secret_key: None,
+                treasury_public_key: None,
+                payout_broadcast_enabled: false,
+                admin_wallet_allowlist: vec![],
+                solana_rpc_url: None,
+                login_domain: "localhost:3000".into(),
+                login_uri: "http://localhost:3000".into(),
+            }),
+        )
     }
 
     pub fn with_gateway(mut self, gateway: Arc<dyn SolanaGateway>) -> Self {
@@ -97,7 +100,9 @@ impl PayoutWorker {
         use crate::modules::solana::gateway::TransferOutcome;
 
         let pool = self.pool.as_ref().ok_or(())?;
-        let ids = repo::list_actionable(pool, BATCH as i64).await.map_err(|_| ())?;
+        let ids = repo::list_actionable(pool, BATCH as i64)
+            .await
+            .map_err(|_| ())?;
         for id in ids {
             let Some(payout) = repo::read_payout(pool, id).await.map_err(|_| ())? else {
                 continue;
@@ -154,7 +159,8 @@ impl PayoutWorker {
             }
             let treasury = self.config.treasury_public_key.clone().unwrap_or_default();
             if treasury.is_empty() {
-                let _ = repo::note_last_error(pool, id, "Treasury identity is not configured.").await;
+                let _ =
+                    repo::note_last_error(pool, id, "Treasury identity is not configured.").await;
                 continue;
             }
             let Some(secret) = self.config.treasury_secret_key.clone() else {
@@ -290,8 +296,11 @@ mod tests {
             login_uri: "http://localhost".into(),
         });
         let gateway = Arc::new(MockSolanaGateway::default());
-        let worker = PayoutWorker::new(Some(PgPool::connect_lazy("postgresql://invalid").unwrap()), config)
-            .with_gateway(gateway.clone());
+        let worker = PayoutWorker::new(
+            Some(PgPool::connect_lazy("postgresql://invalid").unwrap()),
+            config,
+        )
+        .with_gateway(gateway.clone());
         worker.nudge().await;
         assert_eq!(
             gateway
