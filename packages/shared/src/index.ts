@@ -6,14 +6,20 @@ export {
   bountyCategorySchema,
   bountyStatusSchema,
   createBountyInputSchema,
+  createQuestionInputSchema,
   publicBountySchema,
+  publicQuestionSchema,
+  questionTypeSchema,
   verificationMethodSchema,
 } from "./bounty";
 export type {
   BountyCategory,
   BountyStatus,
   CreateBountyInput,
+  CreateQuestionInput,
   PublicBounty,
+  PublicQuestion,
+  QuestionType,
   VerificationMethod,
 } from "./bounty";
 
