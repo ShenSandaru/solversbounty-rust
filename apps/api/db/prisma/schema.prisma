@@ -53,8 +53,28 @@ enum VerificationMethod {
   case_insensitive
   normalized_text
   numeric_exact
+  manual
 
   @@map("verification_method")
+}
+
+enum QuestionType {
+  multiple_choice
+  short_answer
+  logic_puzzle
+  mathematics
+  numerical_pattern
+  cipher
+
+  @@map("question_type")
+}
+
+enum ManualReviewStatus {
+  pending
+  approved
+  rejected
+
+  @@map("manual_review_status")
 }
 
 enum FundingStatus {
@@ -189,7 +209,7 @@ model Bounty {
   updatedAt          DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   creator       User                @relation(fields: [creatorId], references: [id], onDelete: Restrict)
-  question      BountyQuestion?
+  questions     BountyQuestion[]
   fundings      BountyFunding[]
   ledgerEntries BountyLedgerEntry[]
   consents      ConsentRecord[]
@@ -203,14 +223,20 @@ model Bounty {
 
 model BountyQuestion {
   id                       String             @id @default(uuid()) @db.Uuid
-  bountyId                 String             @unique @map("bounty_id") @db.Uuid
+  bountyId                 String             @map("bounty_id") @db.Uuid
+  orderIndex               Int                @default(0) @map("order_index")
+  questionType             QuestionType       @default(short_answer) @map("question_type")
   prompt                   String
+  options                  Json?
   expectedAnswerCiphertext String             @map("expected_answer_ciphertext")
   encryptionKeyId          String             @map("encryption_key_id")
   verificationMethod       VerificationMethod @map("verification_method")
 
-  bounty Bounty @relation(fields: [bountyId], references: [id], onDelete: Restrict)
+  bounty   Bounty              @relation(fields: [bountyId], references: [id], onDelete: Restrict)
+  attempts SubmissionAttempt[]
 
+  @@unique([bountyId, orderIndex])
+  @@index([bountyId])
   @@map("bounty_questions")
 }
 
@@ -299,16 +325,20 @@ model SolvingSession {
 model SubmissionAttempt {
   id                  String               @id @default(uuid()) @db.Uuid
   sessionId           String               @map("session_id") @db.Uuid
+  questionId          String?              @map("question_id") @db.Uuid
   attemptNumber       Int                  @map("attempt_number")
   submittedAnswer     String               @map("submitted_answer")
   isCorrect           Boolean              @map("is_correct")
+  manualReviewStatus  ManualReviewStatus?  @map("manual_review_status")
   ineligibilityReason IneligibilityReason? @map("ineligibility_reason")
   submittedAt         DateTime             @map("submitted_at") @db.Timestamptz(6)
 
   session    SolvingSession    @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  question   BountyQuestion?   @relation(fields: [questionId], references: [id], onDelete: Restrict)
   allocation RewardAllocation?
 
   @@unique([sessionId, attemptNumber])
+  @@index([questionId])
   @@map("submission_attempts")
 }
 
