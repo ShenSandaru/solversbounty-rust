@@ -15,9 +15,9 @@ target/
 *.key
 
 .neon
-apps/api-rs/.env
+apps/api/.env
 
 target-agent/
 **/target-agent/
-apps/api-rs/target/
-apps/api-rs/target-agent/
+apps/api/target/
+apps/api/target-agent/

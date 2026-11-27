@@ -1,6 +1,6 @@
 # Database schema (PostgreSQL)
 
-The Axum API in `apps/api-rs` talks to PostgreSQL with **sqlx**. Table and enum names match the Prisma schema that was originally applied from the Nest app.
+The Axum API in `apps/api` talks to PostgreSQL with **sqlx**. Table and enum names match the Prisma schema that was originally applied from the Nest app.
 
 | Path | Role |
 |------|------|

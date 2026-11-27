@@ -6,6 +6,7 @@ import { useEffect, useId, useState, useSyncExternalStore } from "react";
 import { WalletAuth } from "@/features/auth/wallet-auth";
 import { readOnboardingJourney } from "@/features/marketing/journey-preference";
 import { Brand } from "./brand";
+import { MobileTabBar } from "./mobile-tab-bar";
 import { isNavActive, navItems, pageContext } from "./navigation";
 import { SiteFooter } from "./site-footer";
 
@@ -81,11 +82,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         ) : null}
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0">
           <div className="flex-1">{children}</div>
           <SiteFooter />
         </div>
       </div>
+      <MobileTabBar />
     </div>
   );
 }

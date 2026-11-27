@@ -1,12 +1,12 @@
 # Rust backend parity inventory
 
-Status: **authoritative HTTP and domain contract** for `apps/api-rs`. NestJS has been removed. Do not change product logic without updating this contract and the requirement IDs. Originally derived from the Nest controllers and services.
+Status: **authoritative HTTP and domain contract** for `apps/api`. NestJS has been removed. Do not change product logic without updating this contract and the requirement IDs. Originally derived from the Nest controllers and services.
 
 Related: [BACKEND_ARCHITECTURE.md](BACKEND_ARCHITECTURE.md), [DATABASE_DESIGN.md](DATABASE_DESIGN.md), [BLOCKCHAIN_DESIGN.md](BLOCKCHAIN_DESIGN.md), [ADR-001](../decisions/ADR-001-modular-monolith.md).
 
 ## Purpose
 
-`apps/api-rs` (Axum + Tokio + sqlx) is the only API. `apps/web` depends on these routes, cookies, CSRF, error envelope, lamport JSON strings, E1, payout worker gates, and answer secrecy.
+`apps/api` (Axum + Tokio + sqlx) is the only API. `apps/web` depends on these routes, cookies, CSRF, error envelope, lamport JSON strings, E1, payout worker gates, and answer secrecy.
 
 ## Eligibility rule E1 (canonical)
 
@@ -91,7 +91,7 @@ BigInt / lamport fields serialize as **decimal strings**.
 
 ## 2. Auth contract
 
-Source (historical Nest; now `apps/api-rs/src/modules/auth/*`):
+Source (historical Nest; now `apps/api/src/modules/auth/*`):
 
 | Constant | Value |
 |----------|-------|
@@ -274,7 +274,7 @@ Missing treasury / answer key must not crash public reads or `/health`. Auth wit
 
 ### Schema
 
-PostgreSQL models from [`apps/api-rs/db/prisma/schema.prisma`](../../apps/api-rs/db/prisma/schema.prisma) (14 models) plus partial unique index:
+PostgreSQL models from [`apps/api/db/prisma/schema.prisma`](../../apps/api/db/prisma/schema.prisma) (14 models) plus partial unique index:
 
 ```sql
 CREATE UNIQUE INDEX auth_nonces_one_active_per_wallet
@@ -286,7 +286,7 @@ CREATE UNIQUE INDEX auth_nonces_one_active_per_wallet
 
 ## 8. Nest → Rust module map
 
-| Nest module | Rust module (`apps/api-rs`) | Owns |
+| Nest module | Rust module (`apps/api`) | Owns |
 |-------------|-----------------------------|------|
 | config / bootstrap | `config`, `http` | Env, CORS, errors |
 | health | `http::health` | Liveness / readiness |
@@ -330,7 +330,7 @@ Dependency direction matches [BACKEND_ARCHITECTURE.md](BACKEND_ARCHITECTURE.md):
 
 ## 10. Invariants checklist (cutover gate)
 
-Automated without live DB (`cargo test --manifest-path apps/api-rs/Cargo.toml`, 2026-11-27: 31 passed):
+Automated without live DB (`cargo test --manifest-path apps/api/Cargo.toml`, 2026-11-27: 31 passed):
 
 - [x] E1 capacity function (`pool_exhausted` / `insufficient_refundable`) ported; submit path uses it inside the bounty lock transaction
 - [x] Ledger identity helper (`funded = reserved + paid + refundable + refunded`)
