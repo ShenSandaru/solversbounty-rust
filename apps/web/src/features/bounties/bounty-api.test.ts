@@ -75,6 +75,26 @@ describe("bounty client", () => {
     expect(fetchImpl).toHaveBeenCalledWith("http://localhost:3001/bounties/mine", expect.objectContaining({ credentials: "include" }));
   });
 
+  it("accepts a marketplace payload with a Rust RFC 3339 +00:00 deadline", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify([{
+      id: "bounty-1",
+      title: "Parity",
+      description: "A public description.",
+      instructions: "",
+      prompt: "2 + 2",
+      category: "mathematics",
+      status: "active",
+      rewardLamports: "10000000",
+      maxRewardedSolvers: 10,
+      rewardedCount: 0,
+      attemptLimit: 3,
+      deadline: "2099-01-01T00:00:00+00:00",
+    }]), { status: 200 }));
+    const rows = await listPublicBounties("http://localhost:3001", {}, fetchImpl);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.deadline).toBe("2099-01-01T00:00:00+00:00");
+  });
+
   it("rejects a marketplace payload that includes an expected answer", async () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify([{
       id: "bounty-1",
