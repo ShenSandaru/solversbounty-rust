@@ -5,9 +5,15 @@ import { usePathname } from "next/navigation";
 import type { OnboardingJourney } from "@/features/marketing/journey-preference";
 import { isNavActive, navItemsForMode } from "./navigation";
 
-export function MobileTabBar({ mode }: { mode: OnboardingJourney | null }) {
+export function MobileTabBar({
+  mode,
+  isAdmin = false,
+}: {
+  mode: OnboardingJourney | null;
+  isAdmin?: boolean;
+}) {
   const pathname = usePathname();
-  const items = navItemsForMode(mode);
+  const items = navItemsForMode(mode, { isAdmin });
 
   return (
     <nav

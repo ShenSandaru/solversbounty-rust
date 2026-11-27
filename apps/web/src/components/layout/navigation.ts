@@ -42,6 +42,12 @@ const getStartedItem: NavItem = {
   shortLabel: "Start",
 };
 
+const adminItem: NavItem = {
+  href: "/admin",
+  label: "Admin",
+  shortLabel: "Admin",
+};
+
 /** @deprecated Prefer navItemsForMode — kept for any leftover imports. */
 export const navItems = [
   marketplaceItem,
@@ -50,14 +56,15 @@ export const navItems = [
   researchItem,
 ] as const;
 
-export function navItemsForMode(mode: OnboardingJourney | null): NavItem[] {
+export function navItemsForMode(mode: OnboardingJourney | null, options?: { isAdmin?: boolean }): NavItem[] {
+  const withAdmin = (items: NavItem[]) => (options?.isAdmin ? [...items, adminItem] : items);
   if (mode === "solver") {
-    return [marketplaceItem, solverActivityItem, getStartedItem];
+    return withAdmin([marketplaceItem, solverActivityItem, getStartedItem]);
   }
   if (mode === "creator") {
-    return [creatorBountiesItem, createItem, researchItem, marketplaceItem];
+    return withAdmin([creatorBountiesItem, createItem, researchItem, marketplaceItem]);
   }
-  return [marketplaceItem, getStartedItem];
+  return withAdmin([marketplaceItem, getStartedItem]);
 }
 
 export function isNavActive(pathname: string, href: string): boolean {
@@ -106,6 +113,9 @@ export function pageContext(
   }
   if (pathname === "/research") {
     return { section: "Research", detail: "Owner aggregates for your bounties" };
+  }
+  if (pathname === "/admin") {
+    return { section: "Admin", detail: "Allowlisted wallet sign-in" };
   }
   return { section: "SolversBounty", detail: "App" };
 }

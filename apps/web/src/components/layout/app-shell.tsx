@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useState, useSyncExternalStore } from "react";
+import { useAuthSession } from "@/features/auth/auth-session";
 import { WalletAuth } from "@/features/auth/wallet-auth";
 import {
   readOnboardingJourney,
@@ -13,15 +14,19 @@ import { MobileTabBar } from "./mobile-tab-bar";
 import { ModeSwitch } from "./mode-switch";
 import { isNavActive, navItemsForMode, pageContext } from "./navigation";
 import { SiteFooter } from "./site-footer";
+import { SidebarGuideCard, SystemGuideModal } from "./system-guide";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [openOnPath, setOpenOnPath] = useState<string | null>(null);
+  const [guideOpen, setGuideOpen] = useState(false);
   const menuOpen = openOnPath === pathname;
   const menuId = useId();
+  const { session } = useAuthSession();
   const journey = useSyncExternalStore(subscribeOnboardingJourney, readOnboardingJourney, () => null);
   const context = pageContext(pathname, journey);
-  const items = navItemsForMode(journey);
+  const isAdmin = session?.role === "admin";
+  const items = navItemsForMode(journey, { isAdmin });
 
   useEffect(() => {
     if (!menuOpen) {
@@ -48,6 +53,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Brand className="mb-8" />
         <ModeSwitch mode={journey} className="mb-6" />
         <Navigation pathname={pathname} items={items} onNavigate={() => setOpenOnPath(null)} />
+        <SidebarGuideCard mode={journey} isSignedIn={Boolean(session)} onOpenGuide={() => setGuideOpen(true)} />
       </aside>
       <div className="flex min-h-full min-w-0 flex-col">
         <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur-md">
@@ -67,7 +73,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <p className="hidden truncate text-xs text-muted-foreground sm:block">{context.detail}</p>
               </div>
             </div>
-            <WalletAuth />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setGuideOpen(true)}
+                className="inline-flex h-9 items-center rounded-lg border border-border bg-card px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-brand-green/60 hover:text-foreground"
+              >
+                Guide
+              </button>
+              <WalletAuth />
+            </div>
           </div>
         </header>
         {menuOpen ? (
@@ -97,7 +112,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <SiteFooter />
         </div>
       </div>
-      <MobileTabBar mode={journey} />
+      <MobileTabBar mode={journey} isAdmin={isAdmin} />
+      <SystemGuideModal open={guideOpen} mode={journey} onClose={() => setGuideOpen(false)} />
     </div>
   );
 }

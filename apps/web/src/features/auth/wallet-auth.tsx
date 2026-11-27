@@ -58,9 +58,7 @@ export function WalletAuth() {
           {session.role === "admin" ? " (admin)" : ""}
           {wallet?.adapter.name ? ` via ${wallet.adapter.name}` : ""}
           {connected ? "" : ". The wallet is disconnected. Log out ends the server session."}
-          {session.role === "admin"
-            ? " Admins use the same product UI; there is no separate admin console in this MVP."
-            : ""}
+          {session.role === "admin" ? " Minimal admin entry: /admin." : ""}
         </p>
       ) : null}
       {mismatch ? (

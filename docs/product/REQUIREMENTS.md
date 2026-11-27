@@ -1319,7 +1319,7 @@ Acceptance criteria:
 ### ADMIN-005 No full admin product
 
 - Priority: P0
-- Status: `not_started`
+- Status: `implemented`
 - Modules: web
 - Description: The MVP does not build a standalone administration dashboard.
 
@@ -1327,6 +1327,8 @@ Acceptance criteria:
 
 - Navigation for ordinary users has no admin console.
 - P1 admin capability stays within allowlisted API operations and, at most, a minimal screen.
+
+Evidence: `/admin` is a minimal allowlisted-wallet sign-in screen. Ordinary nav omits Admin; the Admin link appears only when `session.role === "admin"`. No moderation dashboard.
 
 ### ADMIN-006 Platform analytics
 

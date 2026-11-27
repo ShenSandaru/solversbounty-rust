@@ -22,6 +22,15 @@ describe("navItemsForMode", () => {
       "Marketplace",
     ]);
   });
+
+  it("adds Admin only for allowlisted admin sessions", () => {
+    expect(navItemsForMode(null, { isAdmin: true }).map((item) => item.label)).toEqual([
+      "Marketplace",
+      "Get started",
+      "Admin",
+    ]);
+    expect(navItemsForMode("solver").map((item) => item.label)).not.toContain("Admin");
+  });
 });
 
 describe("isNavActive", () => {
@@ -37,5 +46,6 @@ describe("pageContext", () => {
     expect(pageContext("/dashboard", "solver").section).toBe("My activity");
     expect(pageContext("/dashboard", "creator").section).toBe("My bounties");
     expect(pageContext("/research", null).detail).toContain("Owner aggregates");
+    expect(pageContext("/admin", null).section).toBe("Admin");
   });
 });

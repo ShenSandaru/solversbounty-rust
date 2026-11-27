@@ -124,7 +124,7 @@ PD-03 is superseded by [ADR-003](../decisions/ADR-003-postgresql-server-side-ses
 - `/dashboard` is mode-aware: creator My bounties (live `listMyBounties` + next actions including Fund/analytics); solver My activity is an honest empty/next-step state (USER-004 not started). Fixtures removed from the dashboard.
 - `/research` loads `GET /bounties/{id}/analytics` for owned bounties. Demo research numbers are no longer shown as product data. ANALYTICS-010 marked `implemented` (evidence: `analytics-api.test.ts`, owner research UI). ANALYTICS-009 stays open for admin/platform aggregates.
 - Marketing copy: organizations map to creator tools; no org portal or admin console claims. Admin sessions keep a badge plus an explicit no-console note.
-- No `/admin` route was added (ADMIN-005).
+- `/admin` is a minimal allowlisted-wallet sign-in screen (ADMIN-005 `implemented`). Ordinary nav has no Admin link; Admin appears only after an admin session.
 
 ## Verification
 
