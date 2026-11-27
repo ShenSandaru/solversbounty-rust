@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { HealthStatus } from "@/features/home/health-status";
 import { HeroArt } from "./hero-art";
-import { BlurText, CognitiveCanvas, ShimmerPlaceholder, ShinyBadge, SpotlightCard } from "./react-bits";
+import { BlurText, CognitiveCanvas, ShinyBadge, SpotlightCard } from "./react-bits";
 import { Reveal } from "./reveal";
 
 const solverSteps = [
@@ -62,28 +62,23 @@ export function LandingPage() {
               <span>Solana</span>
             </ShinyBadge>
             <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
-              <BlurText text="Great ideas deserve great rewards." accentWord="great rewards." />
+              <BlurText text="Turn human reasoning into measurable value." accentWord="measurable value." />
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
-              {APP_NAME} connects organizations and researchers with human intelligence through funded
-              cognitive challenges. Solve problems, contribute insights, and earn SOL rewards.
+              {APP_NAME} is the cognitive bounty platform where organizations fund high-signal challenges
+              to unlock consented human insights—and solvers earn instant SOL rewards for every right answer.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button size="lg" asChild>
-                <Link href="/bounties">Explore Challenges</Link>
+                <Link href="/get-started">Launch a Challenge</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/get-started">Publish a Challenge</Link>
+                <Link href="/bounties">Explore Challenges</Link>
               </Button>
             </div>
             <p className="mt-4 text-sm text-muted-foreground">
-              Free to browse. Connect your Phantom wallet only when you are ready to create or solve.
+              Launch in minutes. Zero solver fees. Privacy-first by design.
             </p>
-            <div className="mt-8 grid gap-3 sm:grid-cols-3">
-              <ShimmerPlaceholder label="Verification" value="Server-side" hint="Encrypted answers, Rust API" />
-              <ShimmerPlaceholder label="Payouts" value="Native SOL" hint="Custodial Devnet treasury" />
-              <ShimmerPlaceholder label="Research" value="Aggregates" hint="Consented 4-metric insights" />
-            </div>
           </div>
           <div className="flex justify-center lg:justify-end">
             <HeroArt />
@@ -93,28 +88,27 @@ export function LandingPage() {
 
       <Reveal>
         <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:px-8" aria-labelledby="what-heading">
-          <p className="gradient-text text-xs font-semibold tracking-[0.16em] uppercase">What it is</p>
+          <p className="gradient-text text-xs font-semibold tracking-[0.16em] uppercase">Built for teams &amp; talent</p>
           <h2 id="what-heading" className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
-            A marketplace for cognitive work, with consented research measurement.
+            High-signal human insights for organizations. Fair rewards for solvers.
           </h2>
           <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
-            Creators fund a fixed SOL pool. Solvers attempt a predefined question. The backend verifies
-            answers and pays every eligible correct solver the same configured amount. With consent, the
-            platform records observable activity such as attempts and completion time. It does not read
-            private thoughts.
+            Replace slow surveys and low-effort clicks with verifiable cognitive challenges. Set a fixed
+            budget, attract motivated human thinkers, and receive clean aggregate performance data—all
+            while protecting participant privacy.
           </p>
           <div className="mt-10 grid gap-4 md:grid-cols-3">
             <FeatureCard
-              title="Funded challenges"
-              body="Each bounty has a public prompt, a protected expected answer, an attempt limit, and a deadline."
+              title="AI &amp; research teams"
+              body="Benchmark human reasoning on structured problems and measure accuracy, attempts, and speed at scale."
             />
             <FeatureCard
-              title="Wallet authentication"
-              body="There is no email, password, or KYC. Phantom signs a login message. That login is not research consent."
+              title="Growth &amp; community teams"
+              body="Engage global audiences with funded, verifiable challenges that reward real skill instead of bots."
             />
             <FeatureCard
-              title="Custodial Devnet treasury"
-              body="Deposits and payouts are native SOL on Devnet. The backend holds the treasury key. Do not treat this as escrow."
+              title="Privacy-first by default"
+              body="No email, passwords, or KYC. Explicit opt-in consent and strictly aggregated analytics protect every participant."
             />
           </div>
         </section>
@@ -157,15 +151,15 @@ export function LandingPage() {
 
       <Reveal>
         <section id="for-solvers" className="scroll-mt-24 mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
-          <p className="gradient-text text-xs font-semibold tracking-[0.16em] uppercase">For solvers</p>
+          <p className="gradient-text text-xs font-semibold tracking-[0.16em] uppercase">Benefits for solvers</p>
           <h2 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
-            Test your reasoning. Keep the same reward as everyone else who is eligible.
+            Sharpen your mind, stay private, and earn SOL.
           </h2>
           <ul className="mt-6 grid gap-3 text-base leading-7 text-muted-foreground sm:grid-cols-2">
-            <li className="glass p-5">No participation fee. You do not pay to attempt a challenge.</li>
-            <li className="glass p-5">One reward per wallet on a bounty, if you are eligible and the pool still has room.</li>
-            <li className="glass p-5">The server decides correctness, timestamps, and payout eligibility. Ignore any client-side flags.</li>
-            <li className="glass p-5">Payouts are individual SOL transfers from the custodial treasury after confirmation.</li>
+            <li className="glass p-5">100% free to participate—you never pay a fee to attempt a challenge.</li>
+            <li className="glass p-5">Fair payouts: every eligible correct solver receives the same configured SOL reward.</li>
+            <li className="glass p-5">Your privacy comes first: no account forms, no email, and no individual profiles shared.</li>
+            <li className="glass p-5">Fast, transparent SOL payouts sent directly to your wallet once verified.</li>
           </ul>
         </section>
       </Reveal>
@@ -176,28 +170,27 @@ export function LandingPage() {
           className="scroll-mt-24 mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:px-8"
         >
           <p className="gradient-text text-xs font-semibold tracking-[0.16em] uppercase">
-            For creators
+            Benefits for creators
           </p>
           <h2 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
-            Fund a question. Reach human participants. Read aggregate insights.
+            Launch challenges in minutes and gather ethical human insights.
           </h2>
           <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
-            University researchers, independent creators, and organizations all use the same creator tools.
-            There is no separate company account or organization portal. Any signed-in wallet can draft a
-            bounty.
+            Whether you are an independent researcher, educator, or organization, anyone can create a
+            funded challenge with a single wallet—no lengthy onboarding required.
           </p>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             <FeatureCard
-              title="Protected answers"
-              body="The expected answer is stored encrypted on the server. Public payloads omit it and anything that reverses into it."
+              title="Secret answers stay safe"
+              body="Your predefined answers are encrypted and never exposed to browsers, keeping every challenge fair."
             />
             <FeatureCard
-              title="Two funding transfers"
-              body="Reward-pool principal stays available for solvers. The 5% commission is extra and is not taken from that pool."
+              title="Predictable budgets"
+              body="Set your reward per solver and maximum winners upfront. The full reward pool goes straight to solvers."
             />
             <FeatureCard
-              title="Owner analytics only"
-              body="You see aggregates for bounties you own. Administrators may see the same figures across the platform."
+              title="Actionable group insights"
+              body="Track overall participation, accuracy, attempts, and completion time for your challenges in one view."
             />
           </div>
         </section>
@@ -206,33 +199,20 @@ export function LandingPage() {
       <Reveal>
         <section className="border-y border-border bg-card/60" aria-labelledby="research-heading">
           <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
-            <p className="gradient-text text-xs font-semibold tracking-[0.16em] uppercase">Research analytics</p>
+            <p className="gradient-text text-xs font-semibold tracking-[0.16em] uppercase">Privacy &amp; research</p>
             <h2 id="research-heading" className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
-              Consented aggregates, not a window into private thought.
+              How we protect your privacy.
             </h2>
             <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
-              After a solver accepts research-consent-v1, the platform can store whether an attempt is
-              correct, how many attempts are kept, time to the first correct attempt, and how many solvers
-              started a session. The MVP does not collect strategy surveys or written explanations.
+              We believe human intelligence research should be ethical and transparent. Research metrics are
+              only recorded after you explicitly opt in, and analytics only ever show four group-level
+              numbers: participant count, correctness, attempt count, and completion time. Individual solver
+              records and wallet addresses are never shown in analytics.
             </p>
             <Button className="mt-6" variant="outline" asChild>
-              <Link href="/get-started">Open creator tools for owner analytics</Link>
+              <Link href="/get-started">Get started safely</Link>
             </Button>
           </div>
-        </section>
-      </Reveal>
-
-      <Reveal>
-        <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:px-8" aria-labelledby="solana-heading">
-          <p className="gradient-text text-xs font-semibold tracking-[0.16em] uppercase">Why Solana</p>
-          <h2 id="solana-heading" className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
-            Public transfers. Native SOL. Devnet first.
-          </h2>
-          <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
-            Solana lets {APP_NAME} move small native SOL amounts and keep the resulting signatures as
-            public evidence. Confirmed transfers advance product state in PostgreSQL. This demonstration
-            does not offer mainnet, audited programs, or smart-contract escrow.
-          </p>
         </section>
       </Reveal>
 
@@ -259,10 +239,10 @@ export function LandingPage() {
       <section className="border-t border-border">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-start justify-between gap-6 px-4 py-16 sm:px-6 lg:flex-row lg:items-center lg:px-8">
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight">Choose how you want to start.</h2>
+            <h2 className="text-3xl font-semibold tracking-tight">Ready to launch your first challenge?</h2>
             <p className="mt-2 max-w-xl text-muted-foreground">
-              You can explore challenges now. Sign in with Phantom only when you create, fund, or start a
-              solving session.
+              Publish a funded cognitive challenge in minutes, or jump into the marketplace and start
+              earning SOL for your reasoning.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
