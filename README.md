@@ -160,4 +160,4 @@ A reward allocation is created only inside one database transaction when the sub
 
 ## License
 
-No license has been selected.
+[MIT](LICENSE)
