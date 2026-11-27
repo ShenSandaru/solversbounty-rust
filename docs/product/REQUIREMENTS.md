@@ -280,7 +280,7 @@ Acceptance criteria:
 - Priority: P0
 - Status: `implemented`
 - Modules: bounties, solana
-- Description: Status becomes `active` only after the full solver reward pool and the separate 5% commission are verified ([ADR-007](../decisions/ADR-007-company-platform-commission.md), [ADR-012](../decisions/ADR-012-two-devnet-funding-transfers.md), PAY-018). Mocked RPC tests cover activation. Live Devnet evidence: `apps/api-rs/scripts/devnet-funding-smoke.mjs` activated bounty `fdc847c9-2da0-4474-8c1f-b4e9b561adc8` on 2026-11-27 after both confirmed transfers.
+- Description: Status becomes `active` only after the full solver reward pool and the separate 5% commission are verified ([ADR-007](../decisions/ADR-007-company-platform-commission.md), [ADR-012](../decisions/ADR-012-two-devnet-funding-transfers.md), PAY-018). Mocked RPC tests cover activation. Live Devnet evidence: `apps/api/scripts/devnet-funding-smoke.mjs` activated bounty `fdc847c9-2da0-4474-8c1f-b4e9b561adc8` on 2026-11-27 after both confirmed transfers.
 
 Acceptance criteria:
 

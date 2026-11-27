@@ -127,7 +127,7 @@ Those cases remain open.
 
 ## Database boundary
 
-No revenue table name, Prisma model, ledger entry enum value, column, relationship, or transaction structure is approved. Those choices wait for the database design review. This proposal does not change `apps/api-rs/db/prisma/schema.prisma`.
+No revenue table name, Prisma model, ledger entry enum value, column, relationship, or transaction structure is approved. Those choices wait for the database design review. This proposal does not change `apps/api/db/prisma/schema.prisma`.
 
 ## Related decisions
 

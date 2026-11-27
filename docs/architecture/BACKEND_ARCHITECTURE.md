@@ -1,6 +1,6 @@
 # Backend architecture
 
-Status: the API is the Rust Axum modular monolith in `apps/api-rs` ([ADR-013](../decisions/ADR-013-rust-api-modular-monolith.md)). NestJS has been removed. Module map and HTTP contract: [RUST_BACKEND_PARITY.md](RUST_BACKEND_PARITY.md). Schema and migrations: [`apps/api-rs/db`](../../apps/api-rs/db/README.md).
+Status: the API is the Rust Axum modular monolith in `apps/api` ([ADR-013](../decisions/ADR-013-rust-api-modular-monolith.md)). NestJS has been removed. Module map and HTTP contract: [RUST_BACKEND_PARITY.md](RUST_BACKEND_PARITY.md). Schema and migrations: [`apps/api/db`](../../apps/api/db/README.md).
 
 Wallet login, bounty drafts, ADR-012 funding submit, activation, solver consent/sessions/submissions with E1 reservation, creator analytics, and the payout worker (reconcile; broadcast gated by `PAYOUT_BROADCAST_ENABLED`) are implemented in Rust. Routes are unversioned. Swagger `/docs` is not required for the web client.
 

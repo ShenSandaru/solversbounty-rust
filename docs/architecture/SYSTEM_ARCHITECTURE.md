@@ -34,7 +34,7 @@ Intended deployables, not created:
 | Piece | Responsibility |
 | --- | --- |
 | `apps/web` | Pages, wallet connection, forms, display of server state |
-| `apps/api-rs` | Auth, authorization, ledger, verification, payout orchestration (Axum) |
+| `apps/api` | Auth, authorization, ledger, verification, payout orchestration (Axum) |
 | `packages/shared` | Zod contracts and shared types for the web app (PD-17) |
 | PostgreSQL | Users, bounties, sessions, attempts, ledger, payouts |
 | Solana Devnet | SOL transfers the API verifies or signs |

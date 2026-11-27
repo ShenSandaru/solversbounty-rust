@@ -3,7 +3,7 @@
 | | |
 | --- | --- |
 | Phase | Product implementation + Rust API cutover |
-| Milestone | NestJS removed. Sole API is `apps/api-rs`. Live ADR-012 funding verified. Live Phantom UI and live payout broadcast remain open. |
+| Milestone | NestJS removed. Sole API is `apps/api`. Live ADR-012 funding verified. Live Phantom UI and live payout broadcast remain open. |
 | Application | Next.js web + Rust Axum API on `:3001`. |
 | Updated | 2026-11-27 |
 
@@ -20,7 +20,7 @@ Requirement statuses live in [REQUIREMENTS.md](../product/REQUIREMENTS.md). Seve
 | Pay | PAY-008, 018 (live Devnet deposits) | PAY-005, 006, 009 in progress; SystemProgram+Memo signer built; broadcast flag still default false; most other PAY-* not started |
 | Analytics | ANALYTICS-001, 002, 003, 005; PRIV-004 | Remaining ANALYTICS-*, ADMIN-*, USER-*, NFR-* |
 
-Sole API process: `apps/api-rs`. Schema: [`apps/api-rs/db`](../../apps/api-rs/db/README.md). License: MIT.
+Sole API process: `apps/api`. Schema: [`apps/api/db`](../../apps/api/db/README.md). License: MIT.
 
 ## Completed
 
@@ -82,18 +82,18 @@ Security review, written on 2026-11-07. No product workflow was added. Requireme
 
 ## In progress
 
-Rust API cutover (`apps/api-rs`, [ADR-013](../decisions/ADR-013-rust-api-modular-monolith.md)), updated 2026-11-27:
+Rust API cutover (`apps/api`, [ADR-013](../decisions/ADR-013-rust-api-modular-monolith.md)), updated 2026-11-27:
 
-- NestJS `apps/api` **removed**. Schema/migrations preserved under [`apps/api-rs/db`](../../apps/api-rs/db/README.md).
+- NestJS **removed**. Sole API is Rust `apps/api` (renamed from `apps/api-rs`). Schema/migrations under [`apps/api/db`](../../apps/api/db/README.md).
 - Parity contract: [RUST_BACKEND_PARITY.md](../architecture/RUST_BACKEND_PARITY.md).
 - Axum/sqlx modular monolith: routes, cookies/CSRF, error envelope, E1 capacity, funding math, answer cipher, payout worker gates, Devnet RPC gateway.
-- `cargo test` for `apps/api-rs`: 31 passed (unit + HTTP smoke without requiring live DB). Neon readiness and auth nonce issue verified in a local run after TLS + UUID insert fixes.
+- `cargo test` for `apps/api`: 31 passed (unit + HTTP smoke without requiring live DB). Neon readiness and auth nonce issue verified in a local run after TLS + UUID insert fixes.
 - Remaining hardening: Phantom browser smoke, deeper DB HTTP parity. SystemProgram+Memo payout signing is implemented in `treasury_signer.rs` (unit tests pass). `PAYOUT_BROADCAST_ENABLED` stays false by default; no live payout broadcast yet.
 - Requirement statuses are not changed by the language port alone.
 
 Wallet login on the API is proven against the Neon development database and, earlier, a disposable PostgreSQL database. The web client connects Phantom through Solana Wallet Adapter and signs the exact nonce message. AUTH-002, AUTH-004, AUTH-005, AUTH-008, and AUTH-009 are `implemented`. AUTH-001, AUTH-003, AUTH-006, AUTH-007, AUTH-010, and AUTH-011 stay `in_progress` because a real Phantom browser session has not been verified. Desktop computer-use for Chrome/Phantom was aborted by the operator on 2026-11-27. The 8-hour lifetime and logout CSRF check are working defaults, not accepted ADR decisions. The initial migration is applied to the development database `neondb`. Do not apply it to a production database.
 
-Authenticated creators can save and edit bounty drafts. BOUNTY-001, BOUNTY-002, BOUNTY-003, BOUNTY-005, BOUNTY-007, BOUNTY-012, BOUNTY-013, BOUNTY-014, and BOUNTY-016 are `implemented`. BOUNTY-004, BOUNTY-006, BOUNTY-008, BOUNTY-009, BOUNTY-010, BOUNTY-011, and PRIV-009 are `in_progress`. BOUNTY-015 stays `not_started`. [ADR-012](../decisions/ADR-012-two-devnet-funding-transfers.md) live Devnet funding succeeded on 2026-11-27 via [`apps/api-rs/scripts/devnet-funding-smoke.mjs`](../../apps/api-rs/scripts/devnet-funding-smoke.mjs): throwaway creator wallet, two confirmed transfers (reward_pool + commission) to the custodial treasury, then activate. Bounty `fdc847c9-2da0-4474-8c1f-b4e9b561adc8` reached `active`. PAY-008 and PAY-018 are `implemented`. Devnet RPC `requestAirdrop` returned 410; the script bootstrapped the creator from the treasury fee buffer. Solvers can consent, start one session, and submit answers. The API verifies the answer and, when E1 passes, reserves one pending payout. A 15-second in-process worker reconciles submitted signatures and can settle `reserved` to `paid` after `confirmed`. New broadcasts stay off unless `PAYOUT_BROADCAST_ENABLED` is true. A missing signature stays `submitted`. Mocked RPC tests cover reconciliation. A live payout was not broadcast. Creator analytics return the four ADR-009 aggregates without solver wallets. No new migration was added.
+Authenticated creators can save and edit bounty drafts. BOUNTY-001, BOUNTY-002, BOUNTY-003, BOUNTY-005, BOUNTY-007, BOUNTY-012, BOUNTY-013, BOUNTY-014, and BOUNTY-016 are `implemented`. BOUNTY-004, BOUNTY-006, BOUNTY-008, BOUNTY-009, BOUNTY-010, BOUNTY-011, and PRIV-009 are `in_progress`. BOUNTY-015 stays `not_started`. [ADR-012](../decisions/ADR-012-two-devnet-funding-transfers.md) live Devnet funding succeeded on 2026-11-27 via [`apps/api/scripts/devnet-funding-smoke.mjs`](../../apps/api/scripts/devnet-funding-smoke.mjs): throwaway creator wallet, two confirmed transfers (reward_pool + commission) to the custodial treasury, then activate. Bounty `fdc847c9-2da0-4474-8c1f-b4e9b561adc8` reached `active`. PAY-008 and PAY-018 are `implemented`. Devnet RPC `requestAirdrop` returned 410; the script bootstrapped the creator from the treasury fee buffer. Solvers can consent, start one session, and submit answers. The API verifies the answer and, when E1 passes, reserves one pending payout. A 15-second in-process worker reconciles submitted signatures and can settle `reserved` to `paid` after `confirmed`. New broadcasts stay off unless `PAYOUT_BROADCAST_ENABLED` is true. A missing signature stays `submitted`. Mocked RPC tests cover reconciliation. A live payout was not broadcast. Creator analytics return the four ADR-009 aggregates without solver wallets. No new migration was added.
 
 ## Not started
 
@@ -111,7 +111,7 @@ PD-03 is superseded by [ADR-003](../decisions/ADR-003-postgresql-server-side-ses
 ## Next actions
 
 1. Approve the Phantom login message in Chrome before marking AUTH-001, AUTH-003, AUTH-006, or AUTH-007 implemented. Follow [MANUAL_PHANTOM_AUTH.md](MANUAL_PHANTOM_AUTH.md). Computer-use automation was stopped by the operator; a live Phantom approval is still required.
-2. Optionally re-run `node apps/api-rs/scripts/devnet-funding-smoke.mjs` after API restarts to confirm funding still works against Neon + Devnet.
+2. Optionally re-run `node apps/api/scripts/devnet-funding-smoke.mjs` after API restarts to confirm funding still works against Neon + Devnet.
 3. With `PAYOUT_BROADCAST_ENABLED=true` only in a controlled local session, exercise one live treasury payout after a correct eligible solve. Keep the flag false by default.
 4. Deeper DB-backed HTTP parity suite vs the former Nest coverage.
 
@@ -120,8 +120,8 @@ PD-03 is superseded by [ADR-003](../decisions/ADR-003-postgresql-server-side-ses
 Doc sync + live funding + payout signer, 2026-11-27:
 
 - README, PROGRESS, and AGENTS aligned on Rust-only API and requirement statuses.
-- `cargo test` in `apps/api-rs`: 32 passed (includes SystemProgram+Memo `treasury_signer` tests).
-- `node apps/api-rs/scripts/devnet-funding-smoke.mjs`: bounty `fdc847c9-2da0-4474-8c1f-b4e9b561adc8` funded (two Devnet transfers) and activated.
+- `cargo test` in `apps/api`: 32 passed (includes SystemProgram+Memo `treasury_signer` tests).
+- `node apps/api/scripts/devnet-funding-smoke.mjs`: bounty `fdc847c9-2da0-4474-8c1f-b4e9b561adc8` funded (two Devnet transfers) and activated.
 - Phantom UI smoke not completed (computer-use session aborted). AUTH-001 and related stay `in_progress`.
 
 Scaffold checks on 2026-11-07:

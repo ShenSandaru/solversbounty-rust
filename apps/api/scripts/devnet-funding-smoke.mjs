@@ -3,7 +3,7 @@
  * Uses a throwaway keypair (not Phantom). Does not print secret keys.
  *
  * Usage (from repo root):
- *   node apps/api-rs/scripts/devnet-funding-smoke.mjs
+ *   node apps/api/scripts/devnet-funding-smoke.mjs
  */
 import { createRequire } from "node:module";
 import fs from "node:fs";
@@ -46,7 +46,7 @@ const MEMO_PROGRAM_ID = new PublicKey(
 );
 
 function loadDotEnv() {
-  const envPath = path.join(repoRoot, "apps/api-rs/.env");
+  const envPath = path.join(repoRoot, "apps/api/.env");
   const out = {};
   try {
     const text = fs.readFileSync(envPath, "utf8");
