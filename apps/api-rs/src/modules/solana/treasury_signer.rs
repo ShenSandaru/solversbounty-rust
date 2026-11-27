@@ -1,10 +1,17 @@
-//! Treasury key decode and payout memo helpers.
-//! Full SystemProgram+Memo transaction bytes match Nest when a signer backend is configured.
-//! Without an external Solana transaction builder, `sign_payout_transfer` returns `None`
-//! after validating the key material (same failure Nest uses when signing cannot proceed).
+//! Treasury key decode and SystemProgram transfer + Memo payout signing.
+//! Builds legacy Solana transaction bytes (Nest-compatible intent: one transfer + memo).
 
-use ed25519_dalek::SigningKey;
+use ed25519_dalek::{Signer, SigningKey};
 use serde_json::Value;
+
+/// SPL Memo program id base58 (MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr).
+const MEMO_PROGRAM_ID_B58: &str = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr";
+
+const SYSTEM_PROGRAM_ID: [u8; 32] = [0u8; 32];
+
+fn memo_program_id() -> Option<[u8; 32]> {
+    pubkey_from_base58(MEMO_PROGRAM_ID_B58)
+}
 
 #[derive(Debug, Clone)]
 pub struct SignedPayout {
@@ -29,20 +36,80 @@ pub fn sign_payout_transfer(input: SignPayoutInput<'_>) -> Option<SignedPayout> 
     let mut seed = [0u8; 32];
     seed.copy_from_slice(&secret[..32]);
     let signing = SigningKey::from_bytes(&seed);
-    let treasury = bs58::encode(signing.verifying_key().as_bytes()).into_string();
+    let treasury_bytes = signing.verifying_key().to_bytes();
+    let treasury = bs58::encode(treasury_bytes).into_string();
     if treasury != expected {
         return None;
     }
-    let _destination = bs58::decode(input.destination).into_vec().ok()?;
+    let destination = pubkey_from_base58(input.destination)?;
     if input.lamports <= 0 {
         return None;
     }
-    // Nest builds SystemProgram.transfer + MemoSq4… with solana web3.js.
-    // Transaction construction is delegated to the gateway layer when available.
-    // Returning None keeps the worker on the Nest-compatible "could not be signed" path
-    // until a Solana tx builder crate is adopted for broadcast.
-    let _ = (input.memo, input.recent_blockhash);
-    None
+    let lamports = input.lamports as u64;
+    let blockhash = pubkey_from_base58(input.recent_blockhash)?;
+    let memo_program = memo_program_id()?;
+    let memo_bytes = input.memo.as_bytes();
+    if memo_bytes.is_empty() || memo_bytes.len() > 566 {
+        return None;
+    }
+
+    // Account keys: treasury (signer+writable), destination (writable), system, memo.
+    let account_keys: [[u8; 32]; 4] = [
+        treasury_bytes,
+        destination,
+        SYSTEM_PROGRAM_ID,
+        memo_program,
+    ];
+
+    let transfer_data = {
+        let mut data = Vec::with_capacity(12);
+        data.extend_from_slice(&2u32.to_le_bytes()); // SystemInstruction::Transfer
+        data.extend_from_slice(&lamports.to_le_bytes());
+        data
+    };
+
+    // Compiled instructions: program_id_index, accounts, data
+    let mut message = Vec::with_capacity(256);
+    // header: 1 required signature, 0 readonly signed, 2 readonly unsigned (system + memo)
+    message.push(1);
+    message.push(0);
+    message.push(2);
+    push_short_vec_len(&mut message, account_keys.len());
+    for key in &account_keys {
+        message.extend_from_slice(key);
+    }
+    message.extend_from_slice(&blockhash);
+    push_short_vec_len(&mut message, 2); // two instructions
+
+    // SystemProgram.transfer: accounts [treasury, destination]
+    message.push(2); // program_id_index = system
+    push_short_vec_len(&mut message, 2);
+    message.push(0);
+    message.push(1);
+    push_short_vec_len(&mut message, transfer_data.len());
+    message.extend_from_slice(&transfer_data);
+
+    // Memo: accounts [treasury] as signer reference (optional but Nest-compatible)
+    message.push(3); // program_id_index = memo
+    push_short_vec_len(&mut message, 1);
+    message.push(0);
+    push_short_vec_len(&mut message, memo_bytes.len());
+    message.extend_from_slice(memo_bytes);
+
+    let signature = signing.sign(&message);
+    let sig_bytes = signature.to_bytes();
+    let signature_b58 = bs58::encode(sig_bytes).into_string();
+
+    let mut serialized = Vec::with_capacity(1 + 64 + message.len());
+    push_short_vec_len(&mut serialized, 1);
+    serialized.extend_from_slice(&sig_bytes);
+    serialized.extend_from_slice(&message);
+
+    Some(SignedPayout {
+        signature: signature_b58,
+        serialized,
+        treasury,
+    })
 }
 
 pub struct SignPayoutInput<'a> {
@@ -52,6 +119,31 @@ pub struct SignPayoutInput<'a> {
     pub memo: &'a str,
     pub recent_blockhash: &'a str,
     pub expected_treasury: &'a str,
+}
+
+fn pubkey_from_base58(value: &str) -> Option<[u8; 32]> {
+    let bytes = bs58::decode(value.trim()).into_vec().ok()?;
+    if bytes.len() != 32 {
+        return None;
+    }
+    let mut out = [0u8; 32];
+    out.copy_from_slice(&bytes);
+    Some(out)
+}
+
+fn push_short_vec_len(buf: &mut Vec<u8>, len: usize) {
+    // Solana shortvec / compact-u16 encoding for lengths that fit in practice.
+    let mut rem = len;
+    loop {
+        let mut elem = (rem & 0x7f) as u8;
+        rem >>= 7;
+        if rem == 0 {
+            buf.push(elem);
+            break;
+        }
+        elem |= 0x80;
+        buf.push(elem);
+    }
 }
 
 pub fn decode_secret(secret: &str) -> Option<Vec<u8>> {
@@ -114,35 +206,50 @@ mod tests {
     }
 
     #[test]
-    fn decodes_hex_secret_and_derives_address() {
+    fn signs_system_transfer_with_memo() {
         let mut secret = vec![7u8; 64];
         secret[0] = 1;
         let hex_secret = hex::encode(&secret);
         let addr = treasury_address_from_secret(&hex_secret).expect("address");
-        assert!(!addr.is_empty());
+        // Valid-looking 32-byte blockhash as base58 (all zeros is the system program id encoding).
+        let blockhash = bs58::encode([2u8; 32]).into_string();
         let signed = sign_payout_transfer(SignPayoutInput {
             secret: &hex_secret,
             destination: &addr,
-            lamports: 1,
+            lamports: 1_000,
             memo: "sb:payout:x",
-            recent_blockhash: "11111111111111111111111111111111",
+            recent_blockhash: &blockhash,
             expected_treasury: &addr,
-        });
-        assert!(signed.is_none());
+        })
+        .expect("signed");
+        assert!(!signed.signature.is_empty());
+        assert_eq!(signed.treasury, addr);
+        assert!(signed.serialized.len() > 64);
+        // shortvec(1) + 64-byte sig + message header byte
+        assert_eq!(signed.serialized[0], 1);
+        assert_eq!(&signed.serialized[1..65], &bs58::decode(&signed.signature).into_vec().unwrap()[..]);
     }
 
     #[test]
     fn rejects_mismatched_treasury() {
         let secret = hex::encode([9u8; 64]);
         let addr = treasury_address_from_secret(&secret).unwrap();
+        let blockhash = bs58::encode([3u8; 32]).into_string();
         let signed = sign_payout_transfer(SignPayoutInput {
             secret: &secret,
             destination: &addr,
             lamports: 1,
             memo: "m",
-            recent_blockhash: "1",
+            recent_blockhash: &blockhash,
             expected_treasury: "not-the-treasury",
         });
         assert!(signed.is_none());
+    }
+
+    #[test]
+    fn memo_program_id_matches_known_base58() {
+        let id = memo_program_id().expect("memo id");
+        assert_eq!(bs58::encode(id).into_string(), MEMO_PROGRAM_ID_B58);
+        assert_eq!(id.len(), 32);
     }
 }
