@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { shortAddress, useWalletAuth } from "@/features/auth/use-wallet-auth";
+import { WalletBalance } from "@/features/auth/wallet-balance";
 
 type WalletAuthState = ReturnType<typeof useWalletAuth>;
 
@@ -120,9 +121,12 @@ export function MarketingAccountMenu({
             Disconnect
           </Button>
         ) : null}
-        <Button type="button" variant="secondary" size="sm" disabled={busy} onClick={() => void onLogout()}>
-          {phase === "logging-out" ? "Signing out" : "Log out"}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <WalletBalance walletAddress={session.walletAddress} role={session.role} variant="pill" />
+          <Button type="button" variant="secondary" size="sm" disabled={busy} onClick={() => void onLogout()}>
+            {phase === "logging-out" ? "Signing out" : "Log out"}
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -154,10 +158,12 @@ export function MarketingAccountMenu({
         aria-label={`Account ${displayAddress ? shortAddress(displayAddress) : ""}`.trim()}
         onClick={() => setOpen((current) => !current)}
       >
-        <span
-          className={`size-2 shrink-0 rounded-full ${connected ? "bg-brand-green" : "bg-warning"}`}
-          aria-hidden="true"
-        />
+        <span className="grid size-6 shrink-0 place-items-center rounded-full bg-brand-gradient text-[#111116]" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none" className="size-3.5">
+            <circle cx="10" cy="7" r="3" stroke="currentColor" strokeWidth="1.7" />
+            <path d="M4.5 16.2c1.2-2.4 3.2-3.7 5.5-3.7s4.3 1.3 5.5 3.7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+          </svg>
+        </span>
         <span className="font-mono text-xs">{displayAddress ? shortAddress(displayAddress) : "Account"}</span>
         <span className="sr-only">{connected ? "Wallet connected" : "Wallet disconnected"}</span>
         <span className="text-[10px] text-muted-foreground" aria-hidden="true">
