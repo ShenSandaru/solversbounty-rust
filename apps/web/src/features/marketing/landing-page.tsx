@@ -56,7 +56,11 @@ export function LandingPage() {
         <CognitiveCanvas />
         <div className="relative z-10 mx-auto grid w-full max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(16rem,0.85fr)] lg:px-8 lg:py-24">
           <div>
-            <ShinyBadge>Powered by Solana</ShinyBadge>
+            <ShinyBadge className="gap-2">
+              <span>Powered by</span>
+              <SolanaMark />
+              <span>Solana</span>
+            </ShinyBadge>
             <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
               <BlurText text="Great ideas deserve great rewards." accentWord="great rewards." />
             </h1>
@@ -318,5 +322,21 @@ function JourneyCard({
         <Link href={href}>{cta}</Link>
       </Button>
     </SpotlightCard>
+  );
+}
+
+function SolanaMark() {
+  return (
+    <svg viewBox="0 0 24 20" fill="none" className="size-3.5 shrink-0" aria-hidden="true">
+      <defs>
+        <linearGradient id="solana-mark-grad" x1="0" y1="0" x2="24" y2="20" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#9945FF" />
+          <stop offset="100%" stopColor="#14F195" />
+        </linearGradient>
+      </defs>
+      <path d="M4.2 14.5h16.6a.6.6 0 0 1 .42 1.02l-2.6 2.6a1.2 1.2 0 0 1-.85.35H1.2a.6.6 0 0 1-.42-1.02l2.6-2.6a1.2 1.2 0 0 1 .82-.35Z" fill="url(#solana-mark-grad)" />
+      <path d="M4.2 1.5h16.6a.6.6 0 0 1 .42 1.02l-2.6 2.6a1.2 1.2 0 0 1-.85.35H1.2a.6.6 0 0 1-.42-1.02l2.6-2.6a1.2 1.2 0 0 1 .82-.35Z" fill="url(#solana-mark-grad)" />
+      <path d="M19.8 8H3.2a.6.6 0 0 0-.42 1.02l2.6 2.6c.22.23.53.35.85.35h16.57a.6.6 0 0 0 .42-1.02l-2.6-2.6A1.2 1.2 0 0 0 19.8 8Z" fill="url(#solana-mark-grad)" />
+    </svg>
   );
 }
