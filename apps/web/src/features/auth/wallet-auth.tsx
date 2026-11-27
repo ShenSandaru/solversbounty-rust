@@ -24,48 +24,48 @@ export function WalletAuth() {
   } = useWalletAuth();
 
   return (
-    <div className="flex max-w-[11rem] shrink-0 flex-col items-end gap-2 sm:max-w-xs">
+    <div className="flex shrink-0 flex-col items-end gap-1.5">
       <div className="flex flex-wrap items-center justify-end gap-2">
-        {address ? (
-          <p className="font-mono text-xs text-muted-foreground" title={address}>
-            {shortAddress(address)}
-          </p>
-        ) : (
-          <p className="hidden text-xs text-muted-foreground sm:block">{ready ? "Wallet not connected" : "Checking session"}</p>
-        )}
-        {address ? (
-          <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void onDisconnect()}>
-            Disconnect
-          </Button>
+        {session ? (
+          <>
+            <span
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-brand-green/35 bg-brand-green/10 px-3 font-mono text-xs text-foreground"
+              title={`Signed in as ${session.walletAddress}${wallet?.adapter.name ? ` via ${wallet.adapter.name}` : ""}`}
+            >
+              <span className="size-1.5 rounded-full bg-brand-green" aria-hidden="true" />
+              {shortAddress(session.walletAddress)}
+              {session.role === "admin" ? <span className="font-sans text-[11px] text-brand-green">admin</span> : null}
+            </span>
+            <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void onLogout()}>
+              {phase === "logging-out" ? "Signing out" : "Log out"}
+            </Button>
+          </>
+        ) : address ? (
+          <>
+            <p className="font-mono text-xs text-muted-foreground" title={address}>
+              {shortAddress(address)}
+            </p>
+            <Button type="button" size="sm" disabled={busy || !signMessage || !prepared} onClick={onSignIn}>
+              {phase === "signing" ? "Waiting for signature" : prepared ? "Sign in" : "Preparing sign-in"}
+            </Button>
+            <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void onDisconnect()}>
+              Disconnect
+            </Button>
+          </>
         ) : (
           <Button type="button" size="sm" disabled={busy} onClick={() => void onConnect()}>
-            {phase === "connecting" || connecting ? "Connecting" : "Connect wallet"}
+            {phase === "connecting" || connecting ? "Connecting" : ready ? "Connect wallet" : "Checking session"}
           </Button>
         )}
-        {session ? (
-          <Button type="button" variant="secondary" size="sm" disabled={busy} onClick={() => void onLogout()}>
-            {phase === "logging-out" ? "Signing out" : "Log out"}
-          </Button>
-        ) : address ? (
-          <Button type="button" size="sm" disabled={busy || !signMessage || !prepared} onClick={onSignIn}>
-            {phase === "signing" ? "Waiting for signature" : prepared ? "Sign in" : "Preparing sign-in"}
-          </Button>
-        ) : null}
       </div>
-      {session ? (
-        <p className="text-xs text-muted-foreground">
-          Signed in as {shortAddress(session.walletAddress)}
-          {session.role === "admin" ? " (admin)" : ""}
-          {wallet?.adapter.name ? ` via ${wallet.adapter.name}` : ""}
-          {connected ? "" : ". The wallet is disconnected. Log out ends the server session."}
-          {session.role === "admin" ? " Minimal admin entry: /admin." : ""}
-        </p>
+      {session && !connected ? (
+        <p className="text-xs text-muted-foreground">Wallet disconnected. Log out ends the server session.</p>
       ) : null}
       {mismatch ? (
-        <p className="text-xs text-muted-foreground">The connected wallet is different from the signed-in wallet.</p>
+        <p className="text-xs text-warning">Connected wallet differs from the signed-in wallet.</p>
       ) : null}
       {address && !signMessage && !session ? (
-        <p className="text-xs text-muted-foreground">This wallet cannot sign in. It does not support message signing.</p>
+        <p className="text-xs text-muted-foreground">This wallet does not support message signing.</p>
       ) : null}
       {error ? (
         <p className="text-xs text-destructive" role="alert">
