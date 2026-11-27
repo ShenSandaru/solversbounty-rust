@@ -28,10 +28,16 @@
   --warning: #ffc861;
   --brand-purple: #9945ff;
   --brand-green: #14f195;
-  --glass-bg: rgb(26 26 36 / 0.62);
-  --glass-border: rgb(255 255 255 / 0.1);
-  --glass-highlight: rgb(255 255 255 / 0.09);
-  --glass-shadow: 0 10px 32px rgb(0 0 0 / 0.28);
+  --glass-bg: linear-gradient(135deg, rgb(255 255 255 / 0.08) 0%, rgb(255 255 255 / 0.03) 100%);
+  --glass-border: rgb(255 255 255 / 0.16);
+  --glass-highlight: rgb(255 255 255 / 0.22);
+  --glass-shadow: 0 12px 36px rgb(0 0 0 / 0.38);
+  --bot-body-top: #2a2a3a;
+  --bot-body-bottom: #171722;
+  --bot-neck: #232332;
+  --bot-visor: #0c0c12;
+  --bot-visor-stroke: #2d2d3d;
+  --bot-shadow-opacity: 0.28;
 }
 
 :root[data-theme="light"] {
@@ -58,10 +64,16 @@
   --brand-purple: #6d28d9;
   --brand-green: #059669;
   --background-image-brand-gradient: linear-gradient(135deg, #6d28d9 0%, #059669 100%);
-  --glass-bg: rgb(255 255 255 / 0.68);
-  --glass-border: rgb(109 40 217 / 0.14);
-  --glass-highlight: rgb(255 255 255 / 0.9);
-  --glass-shadow: 0 8px 30px rgb(20 20 31 / 0.06);
+  --glass-bg: linear-gradient(135deg, rgb(255 255 255 / 0.72) 0%, rgb(255 255 255 / 0.45) 100%);
+  --glass-border: rgb(255 255 255 / 0.85);
+  --glass-highlight: rgb(255 255 255 / 0.95);
+  --glass-shadow: 0 12px 36px rgb(109 40 217 / 0.09), 0 2px 8px rgb(20 20 31 / 0.05);
+  --bot-body-top: #ffffff;
+  --bot-body-bottom: #e8ecf7;
+  --bot-neck: #d6dcf0;
+  --bot-visor: #1a1b2e;
+  --bot-visor-stroke: #cfd5eb;
+  --bot-shadow-opacity: 0.12;
 }
 
 @theme inline {
@@ -103,9 +115,17 @@
   body {
     @apply bg-background text-foreground;
     background-image:
-      radial-gradient(60rem 28rem at 85% -10%, rgb(153 69 255 / 0.12), transparent 70%),
-      radial-gradient(40rem 24rem at 0% 0%, rgb(20 241 149 / 0.05), transparent 70%);
+      radial-gradient(52rem 34rem at 85% 5%, rgb(153 69 255 / 0.22), transparent 65%),
+      radial-gradient(46rem 32rem at 10% 35%, rgb(20 241 149 / 0.12), transparent 65%),
+      radial-gradient(48rem 34rem at 75% 85%, rgb(153 69 255 / 0.14), transparent 65%);
     background-attachment: fixed;
+  }
+
+  :root[data-theme="light"] body {
+    background-image:
+      radial-gradient(52rem 34rem at 85% 5%, rgb(124 58 237 / 0.16), transparent 65%),
+      radial-gradient(46rem 32rem at 10% 35%, rgb(16 185 129 / 0.14), transparent 65%),
+      radial-gradient(48rem 34rem at 75% 85%, rgb(124 58 237 / 0.12), transparent 65%);
   }
 
   a:focus-visible,

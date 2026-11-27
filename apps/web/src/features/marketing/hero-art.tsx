@@ -13,6 +13,7 @@ const comicStates = [
 export function HeroArt() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 });
+  const [loveMode, setLoveMode] = useState(false);
   const [bubbleIndex, setBubbleIndex] = useState(0);
 
   useEffect(() => {
@@ -39,15 +40,21 @@ export function HeroArt() {
       const rect = node.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
-      const dx = Math.max(-1, Math.min(1, (event.clientX - cx) / 260));
-      const dy = Math.max(-1, Math.min(1, (event.clientY - cy) / 260));
+      const rawDx = event.clientX - cx;
+      const rawDy = event.clientY - cy;
+      const dist = Math.hypot(rawDx, rawDy);
+      setLoveMode(dist < 150);
+      const dx = Math.max(-1, Math.min(1, rawDx / 260));
+      const dy = Math.max(-1, Math.min(1, rawDy / 260));
       setEyeOffset({ x: dx * 5.5, y: dy * 3.5 });
     }
     window.addEventListener("pointermove", onPointerMove, { passive: true });
     return () => window.removeEventListener("pointermove", onPointerMove);
   }, []);
 
-  const currentBubble = comicStates[bubbleIndex] ?? comicStates[0];
+  const currentBubble = loveMode
+    ? { text: "SOL love! ◎💜", accent: "text-brand-green" }
+    : (comicStates[bubbleIndex] ?? comicStates[0]);
 
   return (
     <div
@@ -61,7 +68,7 @@ export function HeroArt() {
       {/* Frameless robot stage blending with background */}
       <div className="relative flex size-full items-center justify-center p-2">
         {/* Comic status speech bubble */}
-        <div className="absolute top-3.5 right-3.5 z-10 max-w-[13.5rem] rounded-2xl rounded-bl-xs border border-border bg-card/95 px-3.5 py-2 shadow-lg backdrop-blur">
+        <div className="absolute -top-2 right-0 z-20 max-w-[13.5rem] rounded-2xl rounded-bl-xs border border-border bg-card/95 px-3.5 py-2 shadow-lg backdrop-blur">
           <span className={`block text-xs font-semibold leading-snug ${currentBubble.accent}`}>
             {currentBubble.text}
           </span>
@@ -95,8 +102,8 @@ export function HeroArt() {
               <stop offset="100%" stopColor="#14F195" />
             </linearGradient>
             <linearGradient id="bot-body" x1="130" y1="70" x2="130" y2="220" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#2a2a3a" />
-              <stop offset="100%" stopColor="#171722" />
+              <stop offset="0%" style={{ stopColor: "var(--bot-body-top)" }} />
+              <stop offset="100%" style={{ stopColor: "var(--bot-body-bottom)" }} />
             </linearGradient>
           </defs>
 
@@ -112,7 +119,7 @@ export function HeroArt() {
           />
 
           {/* Ground shadow */}
-          <ellipse cx="130" cy="228" rx="50" ry="9" fill="#000000" fillOpacity="0.28" />
+          <ellipse cx="130" cy="228" rx="50" ry="9" fill="#000000" style={{ fillOpacity: "var(--bot-shadow-opacity)" }} />
 
           {/* Floating robot group */}
           <g className="animate-[hero-shift_3.2s_ease-in-out_infinite_alternate]">
@@ -139,26 +146,51 @@ export function HeroArt() {
             />
 
             {/* Face visor */}
-            <rect x="84" y="72" width="92" height="50" rx="16" fill="#0c0c12" stroke="#2d2d3d" strokeWidth="1.5" />
+            <rect x="84" y="72" width="92" height="50" rx="16" style={{ fill: "var(--bot-visor)", stroke: "var(--bot-visor-stroke)" }} strokeWidth="1.5" />
 
-            {/* Cursor-tracking glowing eyes */}
+            {/* Cursor-tracking glowing eyes (Solana love mode when cursor is close) */}
             <g transform={`translate(${eyeOffset.x}, ${eyeOffset.y})`}>
-              <rect x="100" y="86" width="18" height="20" rx="9" fill="#14F195" />
-              <circle cx="106" cy="92" r="3" fill="#ffffff" />
-              <rect x="142" y="86" width="18" height="20" rx="9" fill="#14F195" />
-              <circle cx="148" cy="92" r="3" fill="#ffffff" />
+              {loveMode ? (
+                <>
+                  <g transform="translate(98, 86) scale(0.85)">
+                    <path d="M4.2 14.5h16.6a.6.6 0 0 1 .42 1.02l-2.6 2.6a1.2 1.2 0 0 1-.85.35H1.2a.6.6 0 0 1-.42-1.02l2.6-2.6a1.2 1.2 0 0 1 .82-.35Z" fill="url(#bot-grad)" />
+                    <path d="M4.2 1.5h16.6a.6.6 0 0 1 .42 1.02l-2.6 2.6a1.2 1.2 0 0 1-.85.35H1.2a.6.6 0 0 1-.42-1.02l2.6-2.6a1.2 1.2 0 0 1 .82-.35Z" fill="url(#bot-grad)" />
+                    <path d="M19.8 8H3.2a.6.6 0 0 0-.42 1.02l2.6 2.6c.22.23.53.35.85.35h16.57a.6.6 0 0 0 .42-1.02l-2.6-2.6A1.2 1.2 0 0 0 19.8 8Z" fill="url(#bot-grad)" />
+                  </g>
+                  <g transform="translate(140, 86) scale(0.85)">
+                    <path d="M4.2 14.5h16.6a.6.6 0 0 1 .42 1.02l-2.6 2.6a1.2 1.2 0 0 1-.85.35H1.2a.6.6 0 0 1-.42-1.02l2.6-2.6a1.2 1.2 0 0 1 .82-.35Z" fill="url(#bot-grad)" />
+                    <path d="M4.2 1.5h16.6a.6.6 0 0 1 .42 1.02l-2.6 2.6a1.2 1.2 0 0 1-.85.35H1.2a.6.6 0 0 1-.42-1.02l2.6-2.6a1.2 1.2 0 0 1 .82-.35Z" fill="url(#bot-grad)" />
+                    <path d="M19.8 8H3.2a.6.6 0 0 0-.42 1.02l2.6 2.6c.22.23.53.35.85.35h16.57a.6.6 0 0 0 .42-1.02l-2.6-2.6A1.2 1.2 0 0 0 19.8 8Z" fill="url(#bot-grad)" />
+                  </g>
+                </>
+              ) : (
+                <>
+                  <rect x="100" y="86" width="18" height="20" rx="9" fill="#14F195" />
+                  <circle cx="106" cy="92" r="3" fill="#ffffff" />
+                  <rect x="142" y="86" width="18" height="20" rx="9" fill="#14F195" />
+                  <circle cx="148" cy="92" r="3" fill="#ffffff" />
+                </>
+              )}
             </g>
+
+            {/* Blush cheeks in love mode */}
+            {loveMode ? (
+              <>
+                <ellipse cx="96" cy="110" rx="6" ry="3.2" fill="#f472b6" fillOpacity="0.55" />
+                <ellipse cx="164" cy="110" rx="6" ry="3.2" fill="#f472b6" fillOpacity="0.55" />
+              </>
+            ) : null}
 
             {/* Friendly comic smile */}
             <path
-              d="M118 112c4 4 20 4 24 0"
-              stroke="#9945FF"
+              d={loveMode ? "M115 110c5 7 25 7 30 0" : "M118 112c4 4 20 4 24 0"}
+              stroke={loveMode ? "#14F195" : "#9945FF"}
               strokeWidth="2.5"
               strokeLinecap="round"
             />
 
             {/* Neck */}
-            <rect x="116" y="138" width="28" height="10" rx="4" fill="#232332" />
+            <rect x="116" y="138" width="28" height="10" rx="4" style={{ fill: "var(--bot-neck)" }} />
 
             {/* Torso */}
             <rect
@@ -173,7 +205,7 @@ export function HeroArt() {
             />
 
             {/* Chest core emblem */}
-            <rect x="108" y="162" width="44" height="26" rx="10" fill="#0c0c12" stroke="#2d2d3d" strokeWidth="1.5" />
+            <rect x="108" y="162" width="44" height="26" rx="10" style={{ fill: "var(--bot-visor)", stroke: "var(--bot-visor-stroke)" }} strokeWidth="1.5" />
             <path
               d="M118 175h6l3-6 5 12 3-6h7"
               stroke="url(#bot-grad)"
