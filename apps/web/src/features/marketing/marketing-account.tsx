@@ -104,6 +104,9 @@ export function MarketingAccountMenu({
         {session.role === "admin" ? " (admin)" : ""}
         {wallet?.adapter.name ? ` via ${wallet.adapter.name}` : ""}
         {connected ? "" : ". The wallet is disconnected. Log out ends the server session."}
+        {session.role === "admin"
+          ? " Admins use the same product UI; there is no separate admin console in this MVP."
+          : ""}
       </p>
       {mismatch ? (
         <p className="text-xs text-muted-foreground">The connected wallet is different from the signed-in wallet.</p>

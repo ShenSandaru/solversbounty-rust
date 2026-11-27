@@ -1093,7 +1093,7 @@ Acceptance criteria:
 ### ANALYTICS-010 Present statistics
 
 - Priority: P0
-- Status: `not_started`
+- Status: `implemented`
 - Modules: web analytics
 - Description: The creator UI shows the ADR-009 figures: participants, correct count, incorrect count, average completion time, and accuracy. Simple cards, numbers, or a basic chart are enough.
 
@@ -1102,6 +1102,8 @@ Acceptance criteria:
 - Labels match section 5.8.
 - Empty bounties explain that no sessions have started.
 - The view does not require a complex dashboard.
+
+Evidence: `apps/web` owner research UI loads `GET /bounties/{id}/analytics`; `analytics-api.test.ts` parses ADR-009 aggregates and rejects wallet/answer leakage fields.
 
 ### ANALYTICS-011 Charts
 

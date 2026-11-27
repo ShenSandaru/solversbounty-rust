@@ -12,29 +12,30 @@ export function GetStartedPage() {
         What brings you to SolversBounty?
       </h1>
       <p className="mt-4 max-w-2xl text-lg leading-8 text-muted-foreground">
-        Choose a starting path. You can still use every public screen afterwards. Wallet sign-in is
-        required only when you create, fund, or start a solving session.
+        Choose a workspace mode. You can switch modes later in the app sidebar. Wallet sign-in is required
+        only when you create, fund, or start a solving session.
       </p>
       <div className="mt-12 grid gap-6 lg:grid-cols-2">
         <JourneyOption
           journey="solver"
-          eyebrow="Solver"
+          eyebrow="Solver mode"
           title="I want to solve challenges"
           description="Discover intellectual challenges, test your reasoning, contribute to human intelligence research, and earn SOL rewards."
           href="/bounties"
-          cta="Explore Marketplace"
+          cta="Enter solver mode"
         />
         <JourneyOption
           journey="creator"
-          eyebrow="Organization / Creator"
+          eyebrow="Creator mode"
           title="I want to publish challenges"
-          description="Create funded cognitive challenges, reach human participants, and collect consented aggregate research insights."
+          description="Organizations and individual researchers use the same creator tools. Draft a funded cognitive challenge and collect consented aggregate insights."
           href="/bounties/create?from=onboarding"
-          cta="Explore Creator Tools"
+          cta="Enter creator tools"
         />
       </div>
       <p className="mt-8 text-sm text-muted-foreground">
-        Individual researchers can publish. There is no separate company registration.
+        There is no separate company registration or admin portal. Any signed-in wallet can publish; the same
+        wallet can also solve.
       </p>
     </main>
   );
@@ -55,7 +56,7 @@ function JourneyOption({
   href: string;
   cta: string;
 }) {
-  const accent = journey === "solver" ? "hover:border-brand-green/50" : "hover:border-brand-purple/50";
+  const accent = journey === "solver" ? "hover:border-brand-green/50" : "hover:border-brand-green/40";
   return (
     <article className={`glass gradient-border relative flex h-full flex-col overflow-hidden p-8 transition-colors ${accent}`}>
       <p className="text-xs font-semibold tracking-[0.14em] text-brand-green uppercase">{eyebrow}</p>

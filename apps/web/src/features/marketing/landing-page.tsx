@@ -136,11 +136,11 @@ export function LandingPage() {
                 cta="Explore Challenges"
               />
               <JourneyCard
-                eyebrow="For organizations / creators"
+                eyebrow="For creators"
                 title="Publish, then fund"
                 steps={creatorSteps}
                 href="/get-started"
-                cta="Start publishing"
+                cta="Open creator tools"
               />
             </div>
           </div>
@@ -168,14 +168,15 @@ export function LandingPage() {
           className="scroll-mt-24 mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:px-8"
         >
           <p className="gradient-text text-xs font-semibold tracking-[0.16em] uppercase">
-            For organizations / creators
+            For creators
           </p>
           <h2 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
             Fund a question. Reach human participants. Read aggregate insights.
           </h2>
           <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
-            University researchers, independent creators, and organizations all use this path. There is no
-            separate company account. Any signed-in wallet can draft a bounty.
+            University researchers, independent creators, and organizations all use the same creator tools.
+            There is no separate company account or organization portal. Any signed-in wallet can draft a
+            bounty.
           </p>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             <FeatureCard
@@ -207,7 +208,7 @@ export function LandingPage() {
               started a session. The MVP does not collect strategy surveys or written explanations.
             </p>
             <Button className="mt-6" variant="outline" asChild>
-              <Link href="/research">View the demonstration analytics layout</Link>
+              <Link href="/get-started">Open creator tools for owner analytics</Link>
             </Button>
           </div>
         </section>
