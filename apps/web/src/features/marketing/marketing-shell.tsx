@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 import { Brand } from "@/components/layout/brand";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { useWalletAuth } from "@/features/auth/use-wallet-auth";
 import { MarketingAccountMenu, MarketingSignIn } from "./marketing-account";
@@ -33,7 +34,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-full flex-col">
-      <header className="sticky top-0 z-30 border-b border-white/10 bg-background/80 backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="mx-auto grid h-16 w-full max-w-6xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-4 sm:px-6 lg:gap-3 lg:px-8">
           <Brand className="shrink-0" subtitle="" />
           <nav aria-label="Marketing" className="hidden min-w-0 items-center justify-center lg:flex">
@@ -48,6 +49,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
           <div className="flex min-w-0 items-center justify-end gap-2">
+            <ThemeToggle />
             <div className="hidden items-center gap-2 lg:flex">
               {signedIn ? (
                 <MarketingAccountMenu auth={auth} layout="header" />
@@ -86,7 +88,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
             onClick={() => setOpenOnPath(null)}
           />
           <div
-            className="relative flex h-full w-[min(100%,20rem)] flex-col gap-6 overflow-y-auto bg-[#18181f] px-4 py-6 shadow-xl"
+            className="relative flex h-full w-[min(100%,20rem)] flex-col gap-6 overflow-y-auto bg-card px-4 py-6 shadow-xl"
             role="dialog"
             aria-modal="true"
             aria-label="Marketing navigation"

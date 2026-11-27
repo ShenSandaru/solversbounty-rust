@@ -104,6 +104,7 @@ export function MarketingAccountMenu({
         {session.role === "admin" ? " (admin)" : ""}
         {wallet?.adapter.name ? ` via ${wallet.adapter.name}` : ""}
         {connected ? "" : ". The wallet is disconnected. Log out ends the server session."}
+        {session.role === "admin" ? " Minimal admin entry: /admin." : ""}
       </p>
       {mismatch ? (
         <p className="text-xs text-muted-foreground">The connected wallet is different from the signed-in wallet.</p>
@@ -164,7 +165,7 @@ export function MarketingAccountMenu({
         </span>
       </button>
       {open ? (
-        <div id={menuId} className="absolute right-0 z-50 mt-2 rounded-xl border border-border bg-[#18181f] shadow-xl">
+        <div id={menuId} className="absolute right-0 z-50 mt-2 rounded-xl border border-border bg-card shadow-xl">
           {panel}
         </div>
       ) : null}

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { apiBaseUrl } from "@/features/auth/auth-client";
 import { useAuthSession } from "@/features/auth/auth-session";
 import { BountyClientError, activateBounty, readFunding, submitFunding, type FundingView } from "./bounty-api";
+import { CreatorStepper } from "./creator-stepper";
 import { buildFundingTransaction } from "./funding-transaction";
 
 const pendingKey = (bountyId: string, purpose: "reward_pool" | "commission") => `sb-funding:${bountyId}:${purpose}`;
@@ -134,6 +135,12 @@ export function FundBountyPage({ id }: { id: string }) {
 
   return (
     <PageContainer>
+      <CreatorStepper
+        current={funding?.canActivate || funding?.status === "active" ? "activate" : "fund"}
+        isSignedIn={Boolean(session)}
+        bountyId={id}
+        isActive={funding?.status === "active"}
+      />
       <PageHeader
         eyebrow="Custodial Devnet treasury"
         title="Fund this bounty"
@@ -189,7 +196,7 @@ function FundingSummary({
           {pool ? <ObligationRow label="Reward pool" obligation={pool} pending={pending.reward_pool} disabled={!walletMatches || busy !== null} sending={busy === "reward_pool"} onSend={() => onSend("reward_pool")} onCheck={() => onCheck("reward_pool")} /> : null}
         </section>
         <section className="surface relative overflow-hidden border-brand-purple/40 p-5" aria-labelledby="commission-heading">
-          <p className="text-xs font-semibold tracking-[0.12em] text-[#d4b8ff] uppercase">Transfer 2 · Platform fee</p>
+          <p className="text-xs font-semibold tracking-[0.12em] text-brand-purple uppercase">Transfer 2 · Platform fee</p>
           <h2 id="commission-heading" className="mt-1 text-lg font-semibold">Commission (5%)</h2>
           <p className="mt-3 font-mono text-3xl font-semibold">{formatLamportsAsSol(BigInt(funding.commissionLamports))} <span className="text-sm">SOL</span></p>
           <p className="mt-2 text-sm text-muted-foreground">Extra. It is not taken from the reward pool.</p>
@@ -202,9 +209,22 @@ function FundingSummary({
           <p className="mt-1 font-mono text-3xl font-semibold">{formatLamportsAsSol(BigInt(funding.totalFundingLamports))} SOL</p>
           <p className="mt-2 text-sm text-muted-foreground">Status: <StatusPill value={funding.status} />. Network: Devnet. Custody is custodial, not escrow.</p>
         </div>
-        <Button type="button" size="lg" disabled={!funding.canActivate || busy !== null} aria-busy={busy === "activate"} onClick={onActivate}>
-          {busy === "activate" ? "Activating" : funding.status === "active" ? "Active" : "Activate bounty"}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {funding.status === "active" ? (
+            <>
+              <Button asChild>
+                <Link href={`/bounties/${funding.bountyId}`}>View live challenge →</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/research">Research analytics</Link>
+              </Button>
+            </>
+          ) : (
+            <Button type="button" size="lg" disabled={!funding.canActivate || busy !== null} aria-busy={busy === "activate"} onClick={onActivate}>
+              {busy === "activate" ? "Activating" : "Activate bounty"}
+            </Button>
+          )}
+        </div>
       </div>
       {!walletMatches ? <p className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm" role="status">Connect the same wallet you used to sign in. The transfer is approved only when you confirm it in Phantom.</p> : null}
       <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

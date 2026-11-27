@@ -21,6 +21,7 @@ import { useAuthSession } from "@/features/auth/auth-session";
 import { apiBaseUrl } from "@/features/auth/auth-client";
 import { BountyClientError, bountyWriteBody, createBounty, updateBounty, type BountyDraft } from "./bounty-api";
 import { createBountyFormSchema, type CreateBountyFormValues } from "./create-bounty-schema";
+import { CreatorStepper } from "./creator-stepper";
 
 const categories = Object.entries(categoryLabels) as [BountyCategory, string][];
 const methods = Object.entries(verificationMethodLabels) as [VerificationMethod, string][];
@@ -75,8 +76,18 @@ export function CreateBountyForm({
       : formatLamportsAsSol(principalValue + commissionValue);
 
   return (
+    <div className="mt-6">
+      <CreatorStepper current={saved && phase === "saved" ? "fund" : "draft"} isSignedIn={Boolean(session)} bountyId={saved?.id ?? bountyId} />
+      {!session ? (
+        <div className="mb-6 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm leading-6" role="status">
+          <p className="font-medium text-foreground">Sign in with Phantom before saving</p>
+          <p className="mt-0.5 text-muted-foreground">
+            You can draft your challenge below, then use the Phantom button in the top-right header to sign in and save. Signing in does not send SOL.
+          </p>
+        </div>
+      ) : null}
     <form
-      className="mt-6 grid gap-8"
+      className="grid gap-8"
       method="post"
       action="/bounties/create"
       autoComplete="off"
@@ -300,12 +311,21 @@ export function CreateBountyForm({
               <dd className="font-mono">{formatLamportsAsSol(BigInt(saved.commissionLamports))} SOL</dd>
             </div>
           </dl>
-          <Button className="mt-4" variant="outline" asChild>
-            <Link href={`/bounties/${saved.id}/edit`}>Edit draft</Link>
-          </Button>
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <Button asChild>
+              <Link href={`/bounties/${saved.id}/fund`}>Continue to funding →</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href={`/bounties/${saved.id}/edit`}>Edit draft</Link>
+            </Button>
+            <Button variant="ghost" asChild>
+              <Link href="/dashboard">My bounties</Link>
+            </Button>
+          </div>
         </section>
       ) : null}
     </form>
+    </div>
   );
 }
 

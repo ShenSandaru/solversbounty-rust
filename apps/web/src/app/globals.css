@@ -3,7 +3,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Dark-only identity. Purple #9945FF and green #14F195 are accents; text stays high contrast. */
+/* Default dark identity with optional light mode via data-theme="light". */
 :root {
   color-scheme: dark;
   --radius: 0.75rem;
@@ -28,6 +28,52 @@
   --warning: #ffc861;
   --brand-purple: #9945ff;
   --brand-green: #14f195;
+  --glass-bg: linear-gradient(135deg, rgb(255 255 255 / 0.08) 0%, rgb(255 255 255 / 0.03) 100%);
+  --glass-border: rgb(255 255 255 / 0.16);
+  --glass-highlight: rgb(255 255 255 / 0.22);
+  --glass-shadow: 0 12px 36px rgb(0 0 0 / 0.38);
+  --bot-body-top: #2a2a3a;
+  --bot-body-bottom: #171722;
+  --bot-neck: #232332;
+  --bot-visor: #0c0c12;
+  --bot-visor-stroke: #2d2d3d;
+  --bot-shadow-opacity: 0.28;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --background: #f8f9fc;
+  --foreground: #14141f;
+  --card: #ffffff;
+  --card-elevated: #f1f3f9;
+  --card-foreground: #14141f;
+  --primary: #6d28d9;
+  --primary-foreground: #ffffff;
+  --secondary: #eef0f7;
+  --secondary-foreground: #1f2030;
+  --muted: #f1f3f9;
+  --muted-foreground: #4b4d63;
+  --accent: #059669;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --border: #dfe3ef;
+  --input: #cfd5e6;
+  --ring: #6d28d9;
+  --reward: #047857;
+  --warning: #b45309;
+  --brand-purple: #6d28d9;
+  --brand-green: #059669;
+  --background-image-brand-gradient: linear-gradient(135deg, #6d28d9 0%, #059669 100%);
+  --glass-bg: linear-gradient(135deg, rgb(255 255 255 / 0.72) 0%, rgb(255 255 255 / 0.45) 100%);
+  --glass-border: rgb(255 255 255 / 0.85);
+  --glass-highlight: rgb(255 255 255 / 0.95);
+  --glass-shadow: 0 12px 36px rgb(109 40 217 / 0.09), 0 2px 8px rgb(20 20 31 / 0.05);
+  --bot-body-top: #ffffff;
+  --bot-body-bottom: #e8ecf7;
+  --bot-neck: #d6dcf0;
+  --bot-visor: #1a1b2e;
+  --bot-visor-stroke: #cfd5eb;
+  --bot-shadow-opacity: 0.12;
 }
 
 @theme inline {
@@ -69,9 +115,17 @@
   body {
     @apply bg-background text-foreground;
     background-image:
-      radial-gradient(60rem 28rem at 85% -10%, rgb(153 69 255 / 0.12), transparent 70%),
-      radial-gradient(40rem 24rem at 0% 0%, rgb(20 241 149 / 0.05), transparent 70%);
+      radial-gradient(52rem 34rem at 85% 5%, rgb(153 69 255 / 0.22), transparent 65%),
+      radial-gradient(46rem 32rem at 10% 35%, rgb(20 241 149 / 0.12), transparent 65%),
+      radial-gradient(48rem 34rem at 75% 85%, rgb(153 69 255 / 0.14), transparent 65%);
     background-attachment: fixed;
+  }
+
+  :root[data-theme="light"] body {
+    background-image:
+      radial-gradient(52rem 34rem at 85% 5%, rgb(124 58 237 / 0.16), transparent 65%),
+      radial-gradient(46rem 32rem at 10% 35%, rgb(16 185 129 / 0.14), transparent 65%),
+      radial-gradient(48rem 34rem at 75% 85%, rgb(124 58 237 / 0.12), transparent 65%);
   }
 
   a:focus-visible,
@@ -84,11 +138,30 @@
 }
 
 @utility surface {
-  @apply rounded-xl border border-border bg-card;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-highlight),
+    var(--glass-shadow);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
 }
 
 @utility surface-interactive {
-  @apply rounded-xl border border-border bg-card transition-colors hover:border-brand-purple/60 hover:bg-card-elevated;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-highlight),
+    var(--glass-shadow);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+
+  &:hover {
+    border-color: rgb(153 69 255 / 0.55);
+  }
 }
 
 @utility gradient-text {
@@ -110,7 +183,88 @@
 }
 
 @utility glass {
-  @apply rounded-2xl border border-white/10 bg-[#22222B]/80 shadow-[0_0_0_1px_rgb(153_69_255/0.08)_inset] backdrop-blur-md;
+  border-radius: 1rem;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-highlight),
+    var(--glass-shadow);
+  backdrop-filter: blur(18px) saturate(170%);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+}
+
+@keyframes rb-blur-in {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes rb-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.rb-blur-word {
+  animation: rb-blur-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.rb-spotlight::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 220ms ease;
+  background: radial-gradient(
+    260px circle at var(--spot-x, 50%) var(--spot-y, 50%),
+    rgb(153 69 255 / 0.16),
+    rgb(20 241 149 / 0.08) 45%,
+    transparent 75%
+  );
+}
+
+.rb-spotlight:hover::after {
+  opacity: 1;
+}
+
+.rb-shimmer-bar {
+  background: linear-gradient(
+    90deg,
+    rgb(153 69 255 / 0.14) 0%,
+    rgb(20 241 149 / 0.35) 50%,
+    rgb(153 69 255 / 0.14) 100%
+  );
+  background-size: 200% 100%;
+  animation: rb-shimmer 2.4s linear infinite;
+}
+
+.rb-shiny-badge::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 25%, rgb(255 255 255 / 0.25) 50%, transparent 75%);
+  background-size: 220% 100%;
+  animation: rb-shimmer 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rb-blur-word,
+  .rb-shimmer-bar,
+  .rb-shiny-badge::after {
+    animation: none;
+  }
 }
 
 @keyframes hero-shift {

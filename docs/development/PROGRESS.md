@@ -18,7 +18,8 @@ Requirement statuses live in [REQUIREMENTS.md](../product/REQUIREMENTS.md). Seve
 | Market | MARKET-001, 002, 003, 005, 006, 007 | MARKET-004 |
 | Solve / verify | SOLVE-002–006, 008; VERIFY-002–007, 009 | SOLVE-001, 007; VERIFY-001, 008 |
 | Pay | PAY-008, 018 (live Devnet deposits) | PAY-005, 006, 009 in progress; SystemProgram+Memo signer built; broadcast flag still default false; most other PAY-* not started |
-| Analytics | ANALYTICS-001, 002, 003, 005; PRIV-004 | Remaining ANALYTICS-*, ADMIN-*, USER-*, NFR-* |
+| Analytics | ANALYTICS-001, 002, 003, 005, 010; PRIV-004 | ANALYTICS-009 admin/platform still open; remaining ANALYTICS-*, ADMIN-*, USER-*, NFR-* |
+| Web HCI | Solver/Creator mode nav; live My bounties; owner analytics UI; honest solver empty state | USER-004 history API; ADMIN-006 platform screen |
 
 Sole API process: `apps/api`. Schema: [`apps/api/db`](../../apps/api/db/README.md). License: MIT.
 
@@ -114,6 +115,16 @@ PD-03 is superseded by [ADR-003](../decisions/ADR-003-postgresql-server-side-ses
 2. Optionally re-run `node apps/api/scripts/devnet-funding-smoke.mjs` after API restarts to confirm funding still works against Neon + Devnet.
 3. With `PAYOUT_BROADCAST_ENABLED=true` only in a controlled local session, exercise one live treasury payout after a correct eligible solve. Keep the flag false by default.
 4. Deeper DB-backed HTTP parity suite vs the former Nest coverage.
+5. USER-004 solver participation/reward history API when ready to replace the honest empty My activity panel.
+6. ADMIN-006 platform analytics only after the API allows admin reads (no full admin product per ADMIN-005).
+
+## HCI usability pass (2026-11-27)
+
+- App shell: Solver/Creator mode switch filters desktop and mobile nav. Unset mode shows Marketplace + Get started.
+- `/dashboard` is mode-aware: creator My bounties (live `listMyBounties` + next actions including Fund/analytics); solver My activity is an honest empty/next-step state (USER-004 not started). Fixtures removed from the dashboard.
+- `/research` loads `GET /bounties/{id}/analytics` for owned bounties. Demo research numbers are no longer shown as product data. ANALYTICS-010 marked `implemented` (evidence: `analytics-api.test.ts`, owner research UI). ANALYTICS-009 stays open for admin/platform aggregates.
+- Marketing copy: organizations map to creator tools; no org portal or admin console claims. Admin sessions keep a badge plus an explicit no-console note.
+- `/admin` is a minimal allowlisted-wallet sign-in screen (ADMIN-005 `implemented`). Ordinary nav has no Admin link; Admin appears only after an admin session.
 
 ## Verification
 

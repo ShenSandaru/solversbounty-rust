@@ -1093,7 +1093,7 @@ Acceptance criteria:
 ### ANALYTICS-010 Present statistics
 
 - Priority: P0
-- Status: `not_started`
+- Status: `implemented`
 - Modules: web analytics
 - Description: The creator UI shows the ADR-009 figures: participants, correct count, incorrect count, average completion time, and accuracy. Simple cards, numbers, or a basic chart are enough.
 
@@ -1102,6 +1102,8 @@ Acceptance criteria:
 - Labels match section 5.8.
 - Empty bounties explain that no sessions have started.
 - The view does not require a complex dashboard.
+
+Evidence: `apps/web` owner research UI loads `GET /bounties/{id}/analytics`; `analytics-api.test.ts` parses ADR-009 aggregates and rejects wallet/answer leakage fields.
 
 ### ANALYTICS-011 Charts
 
@@ -1317,7 +1319,7 @@ Acceptance criteria:
 ### ADMIN-005 No full admin product
 
 - Priority: P0
-- Status: `not_started`
+- Status: `implemented`
 - Modules: web
 - Description: The MVP does not build a standalone administration dashboard.
 
@@ -1325,6 +1327,8 @@ Acceptance criteria:
 
 - Navigation for ordinary users has no admin console.
 - P1 admin capability stays within allowlisted API operations and, at most, a minimal screen.
+
+Evidence: `/admin` is a minimal allowlisted-wallet sign-in screen. Ordinary nav omits Admin; the Admin link appears only when `session.role === "admin"`. No moderation dashboard.
 
 ### ADMIN-006 Platform analytics
 
