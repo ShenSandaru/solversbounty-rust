@@ -4,7 +4,7 @@ Status: the strategy is accepted as the plan for later milestones. Vitest and Je
 
 Related: [requirements](../product/REQUIREMENTS.md), [coding standards](CODING_STANDARDS.md), [blockchain design](../architecture/BLOCKCHAIN_DESIGN.md).
 
-Payout concurrency tests live in `apps/api/src/modules/rewards/payout.postgres.spec.ts`. They start only when `PAYOUT_INTEGRATION_DATABASE_URL` names the disposable database from `apps/api/docker-compose.payout-test.yml`: host `127.0.0.1`, port `55432`, database `sbpayout`. The spec rejects a Neon host, any other host, and any other database name. Apply the existing Prisma migrations to that container only. The Solana gateway in that spec is mocked. Do not point the variable at Neon.
+Historical Nest payout concurrency tests lived under `apps/api` (removed). Port remaining DB/HTTP payout parity into `apps/api-rs` tests with a disposable Postgres and a mocked Solana gateway. Apply migrations from [`apps/api-rs/db/prisma/migrations`](../../apps/api-rs/db/prisma/migrations). Do not point integration URLs at Neon.
 
 ## Tools
 

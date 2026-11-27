@@ -16,15 +16,16 @@ This ADR does not change custody, authentication mechanism, research privacy, E1
 1. The API modular monolith runs as `apps/api-rs` (Axum + Tokio + sqlx against the same PostgreSQL schema).
 2. Module boundaries from ADR-001 remain: `verification` is pure; only `rewards` and `solana` advance payout transfers; login signature checks stay local and must not require a healthy RPC.
 3. HTTP routes, cookies (`sb_session`, `sb_csrf`), CSRF header, error envelope, lamport JSON strings, and payout worker gates stay compatible with Nest so `apps/web` does not change.
-4. NestJS `apps/api` is retained as a behavioral reference until parity checks in the parity doc pass; then local/dev scripts and docs point at `apps/api-rs` on port `3001`. Nest may be deprecated or removed after that sign-off without a further ADR unless product behavior also changes.
+4. NestJS `apps/api` has been **removed**. The sole API deployable is `apps/api-rs` on port `3001`. Schema and migration history live under [`apps/api-rs/db`](../../apps/api-rs/db/README.md).
 5. `packages/shared` and `apps/web` stay TypeScript.
 
 ## Consequences
 
-- Agents and humans treat [RUST_BACKEND_PARITY.md](../architecture/RUST_BACKEND_PARITY.md) as the port checklist.
+- Agents and humans treat [RUST_BACKEND_PARITY.md](../architecture/RUST_BACKEND_PARITY.md) as the HTTP/behavior contract for the Rust API.
 - Requirement statuses are not marked `implemented` solely because of the language port.
 - New money, auth, or privacy changes still need their own ADR.
-- Dev tooling uses `cargo run` / `cargo test` for the API in addition to existing pnpm scripts for web and shared.
+- Dev tooling uses `pnpm dev:api` / `pnpm test:api` (`cargo`) for the API and pnpm/turbo for web and shared.
+- Open hardening (not blockers for Nest removal): Phantom browser smoke, deeper DB HTTP parity tests, and SystemProgram+Memo treasury broadcast byte construction when payout broadcast is enabled.
 
 ## Alternatives
 

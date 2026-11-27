@@ -57,27 +57,26 @@ apps/web/src/lib/                api client, formatting
 Intended layout:
 
 ```text
-apps/api/src/modules/auth/
-apps/api/src/modules/users/
-apps/api/src/modules/bounties/
-apps/api/src/modules/submissions/
-apps/api/src/modules/verification/
-apps/api/src/modules/rewards/
-apps/api/src/modules/analytics/
-apps/api/src/modules/solana/
-apps/api/src/modules/anti-abuse/
-apps/api/src/modules/audit/
-apps/api/src/common/             filters, guards, config
+apps/api-rs/src/modules/auth/
+apps/api-rs/src/modules/bounties/
+apps/api-rs/src/modules/submissions/
+apps/api-rs/src/modules/verification/
+apps/api-rs/src/modules/rewards/
+apps/api-rs/src/modules/solana/
+apps/api-rs/src/modules/anti_abuse/
+apps/api-rs/src/http/             errors, middleware, health, routes
+apps/api-rs/src/config.rs
+apps/api-rs/db/                   schema reference and migrations
 ```
 
 - One module owns one boundary from the backend architecture.
-- Controllers parse input, call a service, and return a DTO. Business rules do not live in controllers.
+- HTTP handlers parse input, call repositories/services, and return JSON. Business rules do not live only in route wiring.
 - `verification` stays pure. Pass in strings and the method. Do not pass an HTTP request.
-- Cross-module calls follow the dependency graph. The worker emits events instead of importing product modules from `solana`.
+- Cross-module calls follow the dependency graph. Prefer traits over cycles.
 
 ## Validation and errors
 
-- Validate every write body with Zod before domain work.
+- Validate every write body at the API edge before domain work.
 - Reject unknown enums. Do not coerce a verification method by guessing.
 - Return the stable codes in the backend architecture. Include a field-level list for `VALIDATION_ERROR`.
 - Never put the expected answer, ciphertext, treasury key, or session token in an error body.
@@ -93,13 +92,13 @@ apps/api/src/common/             filters, guards, config
 ## Data access
 
 - Money writes go through the transaction boundaries in the backend architecture.
-- Public Prisma queries use an explicit `select` that cannot include `expectedAnswerCiphertext`.
+- Public SQL selects must omit `expected_answer_ciphertext` and any field reversible into the answer.
 - Ledger rows are append-only.
 - Do not add a cache of balances unless it is written in the same transaction as the ledger entry.
 
 ## Testing
 
-- Put unit tests next to the pure code they cover, or under `apps/api/test` for HTTP tests. Follow the testing strategy.
+- Put unit tests next to the pure Rust code they cover, or under `apps/api-rs/tests` for HTTP smoke. Follow the testing strategy.
 - Test names state the requirement and the behavior: `PAY-006 does not sign a second transfer while submitted`.
 - Do not hit Devnet in the default test command.
 

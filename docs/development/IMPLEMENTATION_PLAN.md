@@ -101,9 +101,9 @@ When time is short, stop in this order:
 
 | ID | Decision |
 | --- | --- |
-| CD-01 | pnpm workspaces, Turborepo, `apps/web`, `apps/api`, `packages/shared` |
+| CD-01 | pnpm workspaces, Turborepo, `apps/web`, `apps/api-rs`, `packages/shared` |
 | CD-02 | Next.js App Router, Tailwind, shadcn/ui, Zustand, TanStack Query, React Hook Form, Zod |
-| CD-03 | NestJS modular monolith |
+| CD-03 | Modular monolith API ([ADR-001](../decisions/ADR-001-modular-monolith.md), Rust per [ADR-013](../decisions/ADR-013-rust-api-modular-monolith.md)) |
 | CD-04 | PostgreSQL and Prisma |
 | CD-05 | Solana Devnet, `@solana/web3.js`, no custom program |
 | CD-06 | Sign-In with Solana. Phantom. No email, password, or KYC |

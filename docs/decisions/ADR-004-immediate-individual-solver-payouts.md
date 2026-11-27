@@ -94,7 +94,7 @@ Unused bounty principal remains subject to the separately documented MVP refund 
 - Each payout has an individual transaction record.
 - Reward status can be tracked independently.
 - The system can recover from transaction-processing failures.
-- The payout process fits the existing NestJS modular monolith.
+- The payout process fits the existing modular monolith API.
 
 ### Trade-offs
 

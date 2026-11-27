@@ -1,13 +1,13 @@
 # Database design
 
-Status: **direction approved for the MVP**. `apps/api/prisma/schema.prisma` has 14 models. The initial migration `20261107173154_initial_schema` is applied on the Neon development database `neondb` in `ap-southeast-1`. It is not a production migration.
+Status: **direction approved for the MVP**. Canonical schema reference is [`apps/api-rs/db/prisma/schema.prisma`](../../apps/api-rs/db/prisma/schema.prisma) (14 models). The initial migration `20261107173154_initial_schema` is applied on the Neon development database `neondb` in `ap-southeast-1`. It is not a production migration. The runtime API uses sqlx against these tables ([ADR-013](../decisions/ADR-013-rust-api-modular-monolith.md)).
 
 Four layers stay separate:
 
 | Layer | Meaning in this document |
 | --- | --- |
-| Prisma schema | 14 models. `FundingPurpose`, the two funding uniqueness rules, and the unique `refreshTokenHash` index are declared in `schema.prisma`. Not migrated |
-| Applied DDL | None. The partial nonce index is in the unapplied initial migration and in `apps/api/prisma/manual/partial-indexes.sql` |
+| Schema reference | 14 models in `apps/api-rs/db/prisma/schema.prisma`. `FundingPurpose`, the two funding uniqueness rules, and the unique `refreshTokenHash` index are declared there. Runtime uses sqlx |
+| Applied DDL | None. The partial nonce index is in the unapplied initial migration and in `apps/api-rs/db/prisma/manual/partial-indexes.sql` |
 | Accepted decisions | ADR-001 through ADR-011, including the reward-pool identity and commission outside `funded` |
 | Unresolved details | Listed under Deferred decisions. They block funding or migration only where that section says so |
 
@@ -15,7 +15,7 @@ Approved direction:
 
 - UUID primary keys. PostgreSQL. No extra reward-pool bucket and no platform revenue table.
 - Server-side sessions. The hash column stays `refreshTokenHash`. It is unique in `schema.prisma`. Not migrated.
-- One active authentication nonce per wallet. The partial unique index is in the unapplied initial migration. Prisma cannot declare it, so it is also kept in `apps/api/prisma/manual/partial-indexes.sql`.
+- One active authentication nonce per wallet. The partial unique index is in the unapplied initial migration. Prisma cannot declare it, so it is also kept in `apps/api-rs/db/prisma/manual/partial-indexes.sql`.
 - `ConsentRecord.policyVersion` stays a string. The version text is not accepted.
 - Balances stay sums of `BountyLedgerEntry`. Foreign keys stay `onDelete: Restrict`.
 - `ChainTransaction.commitment` stays text. [ADR-005](../decisions/ADR-005-solana-confirmed-commitment.md) requires the value `confirmed` before funding or payout completion.
@@ -350,7 +350,7 @@ Unique index on `AuthSession.refreshTokenHash` for session lookup. Declared in `
 
 Do not add a separate index on `SolvingSession.bountyId` or `SubmissionAttempt.sessionId`. The unique `(bountyId, solverId)` and unique `(sessionId, attemptNumber)` keys already serve those lookups.
 
-The partial nonce index is in the unapplied initial migration. The same statement stays in `apps/api/prisma/manual/partial-indexes.sql`.
+The partial nonce index is in the unapplied initial migration. The same statement stays in `apps/api-rs/db/prisma/manual/partial-indexes.sql`.
 
 ## Transaction boundaries
 

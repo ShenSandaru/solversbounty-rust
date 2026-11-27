@@ -104,7 +104,7 @@ Wallet uniqueness is one row in `users`, not one person. A person with two Phant
 
 ### Live now
 
-Verified by reading `apps/api/src` and by the Phase 4 HTTP checks:
+Verified historically against the Nest API source and Phase 4 HTTP checks; current API source is `apps/api-rs/src`:
 
 - `GET /health` returns process liveness and the service name.
 - `GET /health/ready` reports whether a configured database is reachable. The body does not include a connection string.

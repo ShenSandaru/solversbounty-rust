@@ -87,9 +87,9 @@ For the hackathon, administration is an allowlisted wallet and protected API ope
 
 | ID | Decision |
 | --- | --- |
-| CD-01 | pnpm workspaces and Turborepo. Intended apps are `apps/web`, `apps/api`, and `packages/shared`. |
+| CD-01 | pnpm workspaces and Turborepo for web/shared. API is `apps/api-rs` (Cargo). Apps: `apps/web`, `apps/api-rs`, `packages/shared`. |
 | CD-02 | Next.js App Router, TypeScript, Tailwind CSS, shadcn/ui, Zustand, TanStack Query, React Hook Form, Zod. |
-| CD-03 | NestJS modular monolith. [ADR-001](../decisions/ADR-001-modular-monolith.md). |
+| CD-03 | Modular monolith API process. [ADR-001](../decisions/ADR-001-modular-monolith.md). Implemented in Rust ([ADR-013](../decisions/ADR-013-rust-api-modular-monolith.md)). |
 | CD-04 | PostgreSQL and Prisma. Local Postgres for development, Neon for the shared hackathon database (PD-12 names the hosting split). |
 | CD-05 | Solana Devnet and `@solana/web3.js`. No custom program in the MVP. |
 | CD-06 | Sign-In with Solana using wallet signatures. Phantom is the required wallet. No email, password, or KYC. |

@@ -29,7 +29,7 @@ These are in the tree and were checked against the running design, not only the 
 - `publicBountySchema` is strict and has no expected-answer field. Marketplace fixtures are typed as public bounties. The preview receipt says the expected answer was not sent.
 - The Prisma schema has no password, email, treasury key, or user secret column. Consent has no IP column. Wallet addresses are unique. `AuthSession.refreshTokenHash` is unique. One solving session, one consent, one allocation, and one payout row are unique as specified. Deletes are `Restrict`. There is no balance cache. None of these constraints are migrated.
 - Domain modules do not import each other. `verification` and `solana` have no domain imports.
-- `.env` is gitignored. Env examples leave secret fields empty. `apps/api/src/generated/` is gitignored.
+- `.env` is gitignored. Env examples leave secret fields empty.
 
 ## Findings
 
@@ -97,7 +97,7 @@ Mitigation: Pending funding stores the signature and does not change bounty stat
 
 - Severity: High
 - Kind: Verified schema gap, no live auth route
-- Component: `AuthNonce`, `apps/api/prisma/manual/partial-indexes.sql`
+- Component: `AuthNonce`, `apps/api-rs/db/prisma/manual/partial-indexes.sql`
 - Blocks MVP: Blocks AUTH-002 and AUTH-009 until the first migration includes this SQL
 
 Description: The partial unique index "one row per wallet with `used_at` and `retired_at` both null" is a comment and a SQL file. Prisma cannot express it. No migration has been created, and local Postgres was not accepting connections.
@@ -397,7 +397,7 @@ The value stays in React state. The receipt omits it. `method="post"` is cancell
 
 - Severity: Informational
 - Kind: Verified
-- Component: `apps/api/prisma.config.ts`
+- Component: `apps/api-rs/db/prisma.config.ts` (schema tooling only; runtime is sqlx)
 - Blocks MVP: No
 
 `prisma generate` can run without `DATABASE_URL` because the CLI config falls back to `postgresql://postgres:postgres@localhost:5432/solversbounty`. The API does not use that fallback. `DatabaseService` stays `not_configured` when the variable is absent. The password is the local placeholder from the env example, not a deployed secret. Do not copy it into Neon.

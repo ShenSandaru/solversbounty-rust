@@ -56,7 +56,7 @@ Status meanings:
 
 | ADR | Status | Decision |
 | --- | --- | --- |
-| [ADR-001 Modular monolith](ADR-001-modular-monolith.md) | accepted | One process with module boundaries. Language stack for the API process is [ADR-013](ADR-013-rust-api-modular-monolith.md) |
+| [ADR-001 Modular monolith](ADR-001-modular-monolith.md) | accepted | One API process with module boundaries. Implemented in Rust per [ADR-013](ADR-013-rust-api-modular-monolith.md) |
 | [ADR-002 Custodial Devnet treasury](ADR-002-custodial-devnet-treasury.md) | accepted | Backend-managed custodial wallet. Not trustless escrow |
 | [ADR-003 PostgreSQL server-side sessions](ADR-003-postgresql-server-side-sessions.md) | accepted | HttpOnly cookie session. Hash stored on `AuthSession`. Not JWT |
 | [ADR-004 Immediate individual solver payouts](ADR-004-immediate-individual-solver-payouts.md) | accepted | Pay each eligible solver after reservation. No batch. E1 unchanged |
@@ -68,7 +68,7 @@ Status meanings:
 | [ADR-010 Role-based analytics visibility](ADR-010-role-based-analytics-visibility.md) | accepted | Creators see aggregates for their own bounties. Administrators see platform aggregates. Neither sees individual solver research records or wallets in analytics |
 | [ADR-011 Simplified MVP platform revenue accounting](ADR-011-separate-platform-revenue-ledger.md) | accepted | Commission stays outside `funded`. Retained principal stays in `refundable` and is classified, not a second asset. No schema approved |
 | [ADR-012 Two Devnet funding transfers](ADR-012-two-devnet-funding-transfers.md) | accepted | Two creator-signed Devnet transfers to the same custodial treasury. One signature confirms one obligation. Commission is not a ledger deposit |
-| [ADR-013 Rust API modular monolith](ADR-013-rust-api-modular-monolith.md) | accepted | API process is Axum/sqlx in `apps/api-rs` with Nest parity contract. Product behavior and E1 unchanged |
+| [ADR-013 Rust API modular monolith](ADR-013-rust-api-modular-monolith.md) | accepted | Sole API is Axum/sqlx in `apps/api-rs`. NestJS removed. Product behavior and E1 unchanged |
 
 ## How to supersede
 

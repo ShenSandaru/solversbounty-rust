@@ -1,12 +1,12 @@
 # Rust backend parity inventory
 
-Status: **authoritative conversion contract** for `apps/api-rs`. NestJS `apps/api` remains the behavior reference until cutover. Do not change product logic while porting. This document is derived from the Nest controllers and services, not from paraphrased PRD text.
+Status: **authoritative HTTP and domain contract** for `apps/api-rs`. NestJS has been removed. Do not change product logic without updating this contract and the requirement IDs. Originally derived from the Nest controllers and services.
 
 Related: [BACKEND_ARCHITECTURE.md](BACKEND_ARCHITECTURE.md), [DATABASE_DESIGN.md](DATABASE_DESIGN.md), [BLOCKCHAIN_DESIGN.md](BLOCKCHAIN_DESIGN.md), [ADR-001](../decisions/ADR-001-modular-monolith.md).
 
 ## Purpose
 
-`apps/api-rs` (Axum + Tokio + sqlx) must match Nest `apps/api` so `apps/web` keeps working without contract changes. Same routes, cookies, CSRF, error envelope, lamport JSON strings, E1, payout worker gates, and answer secrecy.
+`apps/api-rs` (Axum + Tokio + sqlx) is the only API. `apps/web` depends on these routes, cookies, CSRF, error envelope, lamport JSON strings, E1, payout worker gates, and answer secrecy.
 
 ## Eligibility rule E1 (canonical)
 
@@ -91,7 +91,7 @@ BigInt / lamport fields serialize as **decimal strings**.
 
 ## 2. Auth contract
 
-Source: `apps/api/src/modules/auth/*`.
+Source (historical Nest; now `apps/api-rs/src/modules/auth/*`):
 
 | Constant | Value |
 |----------|-------|
@@ -274,7 +274,7 @@ Missing treasury / answer key must not crash public reads or `/health`. Auth wit
 
 ### Schema
 
-Reuse PostgreSQL models from `apps/api/prisma/schema.prisma` (14 models) plus partial unique index:
+PostgreSQL models from [`apps/api-rs/db/prisma/schema.prisma`](../../apps/api-rs/db/prisma/schema.prisma) (14 models) plus partial unique index:
 
 ```sql
 CREATE UNIQUE INDEX auth_nonces_one_active_per_wallet
@@ -342,20 +342,13 @@ Automated without live DB (`cargo test --manifest-path apps/api-rs/Cargo.toml`, 
 - [x] Health / readiness; auth without DB → `NOT_READY`
 - [x] Cookies / CSRF helpers; Ed25519 wallet verify unit test
 
-Still require live Neon + Phantom (or Nest comparison) before deleting Nest:
+Remaining hardening (Nest removed; track in progress):
 
 - [ ] Public / solver responses never include `expectedAnswer` (HTTP against DB)
 - [ ] Client `isCorrect` / `submittedAt` ignored on write (HTTP)
 - [ ] One reward per solver under concurrency
 - [ ] Payout reconcile/settle against mocked or Devnet RPC with stored signature
 - [ ] Web smoke: login → draft → marketplace list against Rust on `:3001`
-- [ ] Live SystemProgram+Memo treasury broadcast bytes (Rust signer builder follow-up; Nest local signer remains reference)
+- [ ] Live SystemProgram+Memo treasury broadcast byte construction when broadcast is enabled
 
----
-
-## Cutover notes
-
-1. Run Nest and Rust against the same Postgres schema during development.
-2. Point `NEXT_PUBLIC_API_URL` at Rust for smoke tests.
-3. After invariants pass, deprecate Nest `apps/api` and update architecture docs / ADR-013.
-4. Do not mark new product requirements `implemented` solely because of the language port.
+Do not mark new product requirements `implemented` solely because of the language port.

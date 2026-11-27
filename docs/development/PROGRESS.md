@@ -2,9 +2,9 @@
 
 | | |
 | --- | --- |
-| Phase | Security and architecture review |
-| Milestone | M1 complete. API infrastructure is in place. Product milestones are not started. |
-| Application | Static web preview. API serves health, readiness, and OpenAPI only. |
+| Phase | Product implementation + Rust API cutover |
+| Milestone | NestJS removed. Sole API is `apps/api-rs`. Product requirements unchanged by language alone. |
+| Application | Next.js web + Rust Axum API on `:3001`. |
 | Updated | 2026-11-27 |
 
 No requirement is `implemented`. The catalogue in [REQUIREMENTS.md](../product/REQUIREMENTS.md) stays `not_started` until acceptance criteria pass. This file must not be updated to claim a demo, a test run of a product flow, or a deployed API unless that work actually happened.
@@ -69,13 +69,14 @@ Security review, written on 2026-11-07. No product workflow was added. Requireme
 
 ## In progress
 
-Rust API port (`apps/api-rs`, [ADR-013](../decisions/ADR-013-rust-api-modular-monolith.md)), checked on 2026-11-27:
+Rust API cutover (`apps/api-rs`, [ADR-013](../decisions/ADR-013-rust-api-modular-monolith.md)), updated 2026-11-27:
 
-- Parity contract written: [RUST_BACKEND_PARITY.md](../architecture/RUST_BACKEND_PARITY.md).
-- Axum/sqlx modular monolith mirrors Nest routes, cookies/CSRF, error envelope, E1 capacity checks, funding math, answer cipher, payout worker gates, and Devnet RPC gateway trait.
-- `cargo test --manifest-path apps/api-rs/Cargo.toml` passed (unit + HTTP smoke without live DB). Requirement statuses are not changed by the language port alone.
-- Nest `apps/api` remains available as the behavioral reference. Live Phantom / Neon smoke against Rust on `:3001` is the remaining cutover check.
-- Payout broadcast signing validates treasury key material; building signed SystemProgram+Memo transaction bytes still needs a Solana tx builder for live broadcast (Nest local signer remains the reference for that step). `PAYOUT_BROADCAST_ENABLED` stays false by default.
+- NestJS `apps/api` **removed**. Schema/migrations preserved under [`apps/api-rs/db`](../../apps/api-rs/db/README.md).
+- Parity contract: [RUST_BACKEND_PARITY.md](../architecture/RUST_BACKEND_PARITY.md).
+- Axum/sqlx modular monolith: routes, cookies/CSRF, error envelope, E1 capacity, funding math, answer cipher, payout worker gates, Devnet RPC gateway.
+- `cargo test` for `apps/api-rs`: 31 passed (unit + HTTP smoke without requiring live DB). Neon readiness and auth nonce issue verified in a local run after TLS + UUID insert fixes.
+- Remaining hardening: Phantom browser smoke, deeper DB HTTP parity, SystemProgram+Memo payout broadcast bytes. `PAYOUT_BROADCAST_ENABLED` stays false by default.
+- Requirement statuses are not changed by the language port alone.
 
 Wallet login on the API is proven against the Neon development database and, earlier, a disposable PostgreSQL database. The web client connects Phantom through Solana Wallet Adapter and signs the exact nonce message. AUTH-002, AUTH-004, AUTH-005, AUTH-008, and AUTH-009 are `implemented`. AUTH-001, AUTH-003, AUTH-006, AUTH-007, AUTH-010, and AUTH-011 stay `in_progress` because a real Phantom browser session has not been verified. The 8-hour lifetime and logout CSRF check are working defaults, not accepted ADR decisions. The initial migration is applied to the development database `neondb`. Do not apply it to a production database.
 

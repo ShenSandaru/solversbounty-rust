@@ -30,12 +30,12 @@ Confirmed choices:
 | Client state | Zustand |
 | Server state | TanStack Query |
 | Forms | React Hook Form and Zod |
-| Backend | NestJS modular monolith, TypeScript |
-| API contract | Swagger / OpenAPI |
-| Database | PostgreSQL (local development, Neon for the shared hackathon database) and Prisma |
-| Blockchain | Solana Devnet and `@solana/web3.js` |
-| Authentication | Sign-In with Solana via wallet signature verification (Phantom) |
-| Tests | Vitest for the web app, Jest for the API |
+| Backend | Rust Axum modular monolith (`apps/api-rs`, [ADR-013](docs/decisions/ADR-013-rust-api-modular-monolith.md)) |
+| API contract | HTTP JSON + cookies/CSRF; see [RUST_BACKEND_PARITY.md](docs/architecture/RUST_BACKEND_PARITY.md) |
+| Database | PostgreSQL (local / Neon); sqlx at runtime; schema under [`apps/api-rs/db`](apps/api-rs/db/README.md) |
+| Blockchain | Solana Devnet (RPC + Ed25519 wallet verify; web uses `@solana/web3.js` / wallet adapter) |
+| Authentication | Wallet signature verification (Phantom); server-side sessions |
+| Tests | Vitest for the web app; `cargo test` for the API |
 
 Details and the proposal register: [Implementation plan](docs/development/IMPLEMENTATION_PLAN.md).
 
@@ -48,8 +48,8 @@ The repository contains the documentation foundation, the application scaffold, 
 ├── AGENTS.md
 ├── README.md
 ├── apps/
-│   ├── api/          NestJS API shell
-│   └── web/          Next.js frontend shell
+│   ├── api-rs/       Rust Axum API (sqlx + db schema)
+│   └── web/          Next.js frontend
 ├── packages/
 │   ├── shared/       Shared Zod contracts and constants
 │   └── typescript-config/
@@ -71,14 +71,17 @@ Install and run from the repository root:
 
 ```bash
 pnpm install
-pnpm dev
+pnpm --filter @solversbounty/shared build
+pnpm dev:web          # Next.js on :3000
+pnpm dev:api          # Rust API on :3001
+pnpm test:api         # cargo test for apps/api-rs
 pnpm build
 pnpm lint
 pnpm test
 pnpm typecheck
 ```
 
-`pnpm dev` starts the web app on port 3000 and the API on port 3001. Swagger is at `http://localhost:3001/docs`. `GET /health` reports process liveness. `GET /health/ready` reports whether a configured PostgreSQL connection is up. Copy [.env.example](.env.example) when you need local environment files. Development starts without `DATABASE_URL`. A URL that is set and cannot connect does not stop `/health`. Production requires `DATABASE_URL`. `DATABASE_URL` is the pooled Neon connection used by the API. `DIRECT_URL` is the direct Neon connection used by Prisma CLI, and a Neon URL must include `sslmode=require`. Authentication, bounty, verification, and payout routes are not implemented.
+`GET /health` reports process liveness. `GET /health/ready` reports whether a configured PostgreSQL connection is up. Copy `apps/api-rs/.env.example` and `apps/web` env as needed. Development can start without `DATABASE_URL`; a bad URL fails readiness, not liveness. Production requires `DATABASE_URL` with `sslmode=require` on Neon.
 
 Preview routes in the web app use sample data. They do not authenticate, save a bounty, verify an answer, or move SOL.
 
@@ -93,7 +96,7 @@ Preview routes in the web app use sample data. They do not authenticate, save a 
 
 Read [AGENTS.md](AGENTS.md) before changing product behavior. Update [progress](docs/development/PROGRESS.md) when a milestone actually changes. Do not mark a requirement `implemented` until its acceptance criteria pass.
 
-Local development is planned against PostgreSQL. The shared hackathon database is planned on Neon. Schema in the database design is proposed, not approved DDL. `prisma generate` writes the client to `apps/api/src/generated/prisma`. Do not run a migration until a local database is configured. The partial nonce index in `apps/api/prisma/manual/partial-indexes.sql` is not applied.
+Local and Neon PostgreSQL share the schema under [`apps/api-rs/db`](apps/api-rs/db/README.md). The Neon development database already has the initial migration; do not re-apply it to production.
 
 ## Documentation
 
@@ -104,7 +107,8 @@ Local development is planned against PostgreSQL. The shared hackathon database i
 | [Requirements catalogue](docs/product/REQUIREMENTS.md) | Stable IDs, acceptance criteria, and implementation status |
 | [User stories](docs/product/USER_STORIES.md) | Creator, solver, and administrator stories |
 | [System architecture](docs/architecture/SYSTEM_ARCHITECTURE.md) | Boundaries, trust, and data flow |
-| [Backend architecture](docs/architecture/BACKEND_ARCHITECTURE.md) | NestJS modules, transactions, and errors |
+| [Backend architecture](docs/architecture/BACKEND_ARCHITECTURE.md) | API modules, transactions, and errors |
+| [Rust API parity](docs/architecture/RUST_BACKEND_PARITY.md) | HTTP contract and module map for `apps/api-rs` |
 | [Database design](docs/architecture/DATABASE_DESIGN.md) | Proposed entities, constraints, and sensitive data |
 | [Blockchain design](docs/architecture/BLOCKCHAIN_DESIGN.md) | Deposits, treasury, payouts, refunds, and failures |
 | [Implementation plan](docs/development/IMPLEMENTATION_PLAN.md) | 40-hour plan, proposals, open questions, conflicts |

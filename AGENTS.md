@@ -4,7 +4,7 @@ Authoritative instructions for humans and AI coding agents working in this repos
 
 Product behavior lives in [docs/product/PRD.md](docs/product/PRD.md) and [docs/product/REQUIREMENTS.md](docs/product/REQUIREMENTS.md). Architecture lives under [docs/architecture](docs/architecture/SYSTEM_ARCHITECTURE.md). Decisions that are already locked live in [docs/decisions](docs/decisions/README.md). This file wins on **how to work**. Those documents win on **what to build**. If they conflict, stop and report the conflict. Do not silently pick a side.
 
-Phase 2 scaffold is in place: `apps/web`, `apps/api` (Nest reference), `apps/api-rs` (Rust Axum API, [ADR-013](docs/decisions/ADR-013-rust-api-modular-monolith.md)), `packages/shared`, and `packages/typescript-config`. The Rust parity contract is [RUST_BACKEND_PARITY.md](docs/architecture/RUST_BACKEND_PARITY.md). Do not start Phase 3 unless the user explicitly asks. `apps/web/AGENTS.md` is a Next.js local note. This root file remains the product and repository authority.
+Apps: `apps/web` (Next.js), `apps/api-rs` (Rust Axum modular monolith, [ADR-013](docs/decisions/ADR-013-rust-api-modular-monolith.md)), `packages/shared`, and `packages/typescript-config`. NestJS `apps/api` has been removed. Behavior contract and module map: [RUST_BACKEND_PARITY.md](docs/architecture/RUST_BACKEND_PARITY.md). Schema reference and migrations: [`apps/api-rs/db`](apps/api-rs/db/README.md). Do not start Phase 3 unless the user explicitly asks. `apps/web/AGENTS.md` is a Next.js local note. This root file remains the product and repository authority.
 
 ## Project in one page
 
@@ -34,9 +34,9 @@ Confirmed decisions are IDs `CD-*`. Proposed decisions are IDs `PD-*` and stay l
 Processes:
 
 - `apps/web` renders UI, talks to Phantom, signs authentication messages, and calls the API. It may display server results. It must not decide correctness, eligibility, timestamps, balances, or payouts.
-- `apps/api-rs` is the Rust (Axum) modular monolith that owns authorization, validation, the ledger, verification, and payout orchestration ([ADR-013](docs/decisions/ADR-013-rust-api-modular-monolith.md)). NestJS `apps/api` remains a behavioral reference until cutover is complete.
-- `packages/shared` is for shared contracts and types. It must not import NestJS or React.
-- PostgreSQL is the source of product state. Chain transactions are evidence used to advance that state.
+- `apps/api-rs` is the Rust (Axum + sqlx) modular monolith that owns authorization, validation, the ledger, verification, and payout orchestration ([ADR-013](docs/decisions/ADR-013-rust-api-modular-monolith.md)).
+- `packages/shared` is for shared TypeScript contracts and types used by the web app. It must not import React or the API crate.
+- PostgreSQL is the source of product state. Chain transactions are evidence used to advance that state. Schema lives under [`apps/api-rs/db`](apps/api-rs/db/README.md).
 - The treasury signing key exists only in API secret storage ([ADR-006](docs/decisions/ADR-006-devnet-treasury-private-key-storage.md)). It is never placed in the frontend, the database, logs, fixtures, or docs.
 
 Module rules for the API:
@@ -45,7 +45,7 @@ Module rules for the API:
 - `rewards` and `solana` are the only modules that create or advance payout transfers.
 - `auth` may call `solana` for local signature verification. Login must not depend on a healthy RPC.
 - HTTP handlers record intent and return. An in-process worker confirms deposits and payouts (PD-16). Do not block ordinary reads on chain confirmation.
-- Cross-module cycles are broken with a Nest event or a narrow interface, not with a new service.
+- Cross-module cycles are broken with a narrow trait/interface or an in-process event, not with a new service.
 
 Data rules:
 
@@ -53,7 +53,7 @@ Data rules:
 - Error bodies never include the expected answer, a treasury secret, or a raw signed transaction.
 - Server clocks set `startedAt` and `submittedAt`. Ignore client clocks.
 - Ignore client flags such as `isCorrect`, `eligible`, or `amountLamports` on write requests.
-- Ledger math uses integer lamports (`bigint`). Do not use JavaScript `number` or binary floating point for SOL amounts.
+- Ledger math uses integer lamports (`i64` / `bigint` at the TypeScript edge). Do not use binary floating point for SOL amounts.
 - Eligibility rule E1 in the [README](README.md) is canonical. Copy it verbatim when restating it. Do not paraphrase it into a looser rule.
 
 A schema change updates [DATABASE_DESIGN.md](docs/architecture/DATABASE_DESIGN.md) in the same change. A change to custody, the auth mechanism, privacy of research data, or money movement also needs an ADR. Leaving the modular monolith needs an ADR.
@@ -62,10 +62,11 @@ A schema change updates [DATABASE_DESIGN.md](docs/architecture/DATABASE_DESIGN.m
 
 Follow [CODING_STANDARDS.md](docs/development/CODING_STANDARDS.md).
 
-- TypeScript strict mode. No `any`. No suppressed errors without a stated reason.
+- Frontend: TypeScript strict mode. No `any`. No suppressed errors without a stated reason.
+- Backend: Rust with Axum/sqlx; no `unwrap` on request paths without a mapped API error.
 - Prefer the simplest design that meets the requirement inside the 40-hour limit.
-- Feature folders on the frontend. One Nest module per backend boundary listed in the backend architecture.
-- Validate external input with Zod at the edge. Share the contract through `packages/shared` when PD-17 is in force.
+- Feature folders on the frontend. One Rust module per backend boundary listed in the backend architecture.
+- Validate external input at the API edge (serde + checks). Web shares Zod contracts through `packages/shared` when PD-17 is in force.
 - Structured logs. Log identifiers needed to debug a payout. Never log expected answers, submitted answers, authorization headers, cookies, session tokens, or secret keys.
 - Comments explain a non-obvious invariant. Do not narrate the code.
 - Do not add a dependency for a problem the standard library or an existing dependency already solves.
@@ -110,7 +111,7 @@ Follow [TESTING_STRATEGY.md](docs/development/TESTING_STRATEGY.md).
 - Do not commit, print, or paste secrets, seed phrases, or private keys.
 - Do not trust frontend-submitted correctness, timestamps, prices, or payout eligibility.
 - Do not describe custodial funds as trustless, non-custodial, or smart-contract escrow.
-- Do not add a custom Solana program, email/password login, KYC, or a microservice split in the MVP.
+- Do not add a custom Solana program, email/password login, KYC, a NestJS API, or a microservice split in the MVP.
 - Do not introduce a queue cluster, a second database, or a generic plugin system for the hackathon.
 - Do not expose the expected answer through a public route, a GraphQL field, a log, an error, a client bundle, or a test snapshot of a public DTO.
 - Do not start Phase 3, or a product feature, from a scaffold or documentation task.
@@ -129,6 +130,6 @@ A change is done when all of the following hold:
 
 ## Current phase
 
-The API is being cut over to Rust (`apps/api-rs`, [ADR-013](docs/decisions/ADR-013-rust-api-modular-monolith.md)). Nest `apps/api` remains the reference. Product requirement statuses are unchanged by the language port alone.
+The sole API process is Rust `apps/api-rs` ([ADR-013](docs/decisions/ADR-013-rust-api-modular-monolith.md)). NestJS has been removed. Product requirement statuses are not marked `implemented` solely because of the language port. Open hardening: live Phantom smoke, full DB HTTP parity suite, and SystemProgram+Memo treasury broadcast bytes when `PAYOUT_BROADCAST_ENABLED` is true.
 
 The user has started product implementation. The web app can connect Phantom and sign the API login message. AUTH-002, AUTH-004, AUTH-005, AUTH-008, and AUTH-009 are `implemented`. AUTH-001, AUTH-003, AUTH-006, AUTH-007, AUTH-010, and AUTH-011 stay `in_progress` until a real Phantom browser session is verified. The 8-hour session lifetime and the logout CSRF check are working defaults, not accepted ADR decisions. The initial migration is applied to the Neon development database `neondb`. Do not apply it to a production database. Authenticated creators can save and edit their own bounty drafts. BOUNTY-001, BOUNTY-002, BOUNTY-003, BOUNTY-005, BOUNTY-012, BOUNTY-013, and BOUNTY-014 are `implemented`. BOUNTY-004, BOUNTY-006, BOUNTY-007, BOUNTY-008, BOUNTY-009, BOUNTY-010, BOUNTY-011, and PRIV-009 are `in_progress`. Creator funding is `in_progress` under [ADR-012](docs/decisions/ADR-012-two-devnet-funding-transfers.md): two Devnet transfers to the custodial treasury, mocked RPC tests, and no live transfer yet. Solver consent, sessions, and server-side answer checks are `in_progress` with mocked API tests. A correct eligible attempt reserves a pending payout. The payout worker reconciles submitted signatures and settles after confirmation. New broadcasts stay off unless `PAYOUT_BROADCAST_ENABLED` is true. A missing signature stays `submitted`. Mocked RPC tests cover that path. A live payout transfer has not been sent. Advanced analytics are not started. PD-03 is superseded by [ADR-003](docs/decisions/ADR-003-postgresql-server-side-sessions.md). PD-05 is superseded by [ADR-004](docs/decisions/ADR-004-immediate-individual-solver-payouts.md). PD-13 is superseded by [ADR-005](docs/decisions/ADR-005-solana-confirmed-commitment.md). PD-15 is superseded by [ADR-006](docs/decisions/ADR-006-devnet-treasury-private-key-storage.md). CD-12 is superseded by [ADR-007](docs/decisions/ADR-007-company-platform-commission.md). PD-08 is superseded for deadline and full allocation by [ADR-008](docs/decisions/ADR-008-unused-reward-pool-retention.md). MVP analytics are [ADR-009](docs/decisions/ADR-009-minimal-research-analytics.md). Who may read them is [ADR-010](docs/decisions/ADR-010-role-based-analytics-visibility.md). PD-10 is not an MVP analytics requirement. PD-14 is answered for analytics visibility. [ADR-011](docs/decisions/ADR-011-separate-platform-revenue-ledger.md) is accepted and approves no schema. ADR-008 keeps retained principal in `refundable`. Cancelled, never-activated, failed-funding, and other exceptional endings remain unspecified. The session lifetime and CSRF mechanism remain working defaults. Eight hours and the logout CSRF check are not accepted ADR decisions.

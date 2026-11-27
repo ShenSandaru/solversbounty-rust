@@ -14,7 +14,6 @@ target/
 *.pem
 *.key
 
-apps/api/src/generated/
 .neon
 apps/api-rs/.env
 

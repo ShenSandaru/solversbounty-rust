@@ -6,13 +6,14 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "lint": "turbo lint",
-    "test": "turbo test",
-    "typecheck": "turbo typecheck",
-    "api:rs": "cargo run --manifest-path apps/api-rs/Cargo.toml",
-    "test:api-rs": "cargo test --manifest-path apps/api-rs/Cargo.toml"
+    "dev": "turbo dev --filter=@solversbounty/web --filter=@solversbounty/shared",
+    "dev:web": "pnpm --filter @solversbounty/web dev",
+    "dev:api": "cargo run --manifest-path apps/api-rs/Cargo.toml",
+    "build": "turbo build --filter=@solversbounty/web --filter=@solversbounty/shared --filter=@solversbounty/typescript-config",
+    "lint": "turbo lint --filter=@solversbounty/web --filter=@solversbounty/shared",
+    "test": "turbo test --filter=@solversbounty/web --filter=@solversbounty/shared",
+    "test:api": "cargo test --manifest-path apps/api-rs/Cargo.toml",
+    "typecheck": "turbo typecheck --filter=@solversbounty/web --filter=@solversbounty/shared"
   },
   "devDependencies": {
     "turbo": "2.11.10"

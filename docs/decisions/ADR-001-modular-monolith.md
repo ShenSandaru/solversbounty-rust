@@ -13,18 +13,18 @@ A microservice per module would split the reward reservation across a network ca
 
 ## Decision
 
-The API is one NestJS process organized as a modular monolith (CD-03).
+The API is one process organized as a modular monolith (CD-03). Implementation language is Rust Axum/sqlx per [ADR-013](ADR-013-rust-api-modular-monolith.md) (NestJS removed).
 
 - Modules and allowed dependencies are defined in [backend architecture](../architecture/BACKEND_ARCHITECTURE.md).
 - Reward reservation, the payout row, and the ledger move commit in one PostgreSQL transaction.
 - The Solana send happens after that commit. Recovery uses payout rows, not a second service.
-- `packages/shared` holds contracts only. It is not a runtime service.
+- `packages/shared` holds TypeScript contracts for the web app only. It is not a runtime service.
 - Leaving this shape, or splitting out payouts or chain access, requires a new ADR.
 
 ## Consequences
 
 - One deployable API is enough for the demo.
-- Module boundaries are conventions plus Nest modules. A bad import can still couple them. The dependency graph in the backend architecture is the check.
+- Module boundaries are conventions plus crate modules. A bad import can still couple them. The dependency graph in the backend architecture is the check.
 - The confirmation worker runs in the same process (PD-16). A crash stops HTTP and confirmation together. Restart resumes from database rows.
 - Horizontal scaling and independent scaling of payouts are out of scope.
 - Tests can cover E1 with one database and a fake chain gateway.
