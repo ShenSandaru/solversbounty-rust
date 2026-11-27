@@ -35,7 +35,7 @@ export const publicBountySchema = z
     maxRewardedSolvers: z.number().int().positive(),
     rewardedCount: z.number().int().nonnegative(),
     attemptLimit: z.number().int().positive(),
-    deadline: z.string().datetime(),
+    deadline: z.string().datetime({ offset: true }),
   })
   .strict();
 

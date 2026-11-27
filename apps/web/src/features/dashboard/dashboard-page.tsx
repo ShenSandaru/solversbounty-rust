@@ -1,122 +1,200 @@
-import { formatLamportsAsSol } from "@solversbounty/shared";
+"use client";
+
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useSyncExternalStore } from "react";
+import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/page-container";
 import { PageHeader } from "@/components/page-header";
-import { StatisticCard } from "@/components/statistic-card";
-import { creatorBounties } from "@/data/mock/bounties";
-import { dashboardSample } from "@/data/mock/dashboard";
-import { CreatorDraftList } from "./creator-draft-list";
-import { closeReasonLabels, statusLabels } from "@/lib/labels";
-import { formatDeadline } from "@/lib/dates";
+import { useAuthSession } from "@/features/auth/auth-session";
+import { WalletBalance } from "@/features/auth/wallet-balance";
+import {
+  readOnboardingJourney,
+  subscribeOnboardingJourney,
+  writeOnboardingJourney,
+} from "@/features/marketing/journey-preference";
+import { CreatorBountyList } from "./creator-bounty-list";
+import { SolverActivityPanel } from "./solver-activity-panel";
 
 export function DashboardPage() {
-  const earned = formatLamportsAsSol(BigInt(dashboardSample.rewardsEarnedLamports));
-  const activeBounties = creatorBounties.filter((bounty) => bounty.status === "active").length;
+  const { session } = useAuthSession();
+  const searchParams = useSearchParams();
+  const activeTab = searchParams.get("tab") === "profile" ? "profile" : "overview";
+  const mode = useSyncExternalStore(subscribeOnboardingJourney, readOnboardingJourney, () => null);
+  const walletCard = session ? (
+    <div className="mt-6">
+      <WalletBalance walletAddress={session.walletAddress} role={session.role} variant="card" />
+    </div>
+  ) : null;
+
+  const tabs = (
+    <div className="mt-5 inline-flex rounded-lg border border-border bg-secondary/40 p-1" role="tablist" aria-label="Dashboard sections">
+      <Link
+        href="/dashboard"
+        role="tab"
+        aria-selected={activeTab === "overview"}
+        className={`rounded-md px-3.5 py-1.5 text-xs font-medium transition-colors ${
+          activeTab === "overview" ? "bg-brand-green/15 text-foreground" : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        {mode === "creator" ? "My bounties" : mode === "solver" ? "My activity" : "Overview"}
+      </Link>
+      <Link
+        href="/dashboard?tab=profile"
+        role="tab"
+        aria-selected={activeTab === "profile"}
+        className={`rounded-md px-3.5 py-1.5 text-xs font-medium transition-colors ${
+          activeTab === "profile" ? "bg-brand-green/15 text-foreground" : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        Profile
+      </Link>
+    </div>
+  );
+
+  if (activeTab === "profile") {
+    return (
+      <PageContainer>
+        <PageHeader
+          eyebrow="Profile"
+          title="Wallet & account"
+          description="Your connected Solana wallet balance, role, and active workspace mode."
+        />
+        {tabs}
+        {session ? (
+          <div className="mt-6 grid gap-4">
+            <WalletBalance walletAddress={session.walletAddress} role={session.role} variant="card" />
+            <section className="surface grid gap-3 p-5 text-sm sm:grid-cols-2">
+              <div>
+                <p className="text-xs text-muted-foreground">Connected wallet</p>
+                <p className="mt-1 break-all font-mono text-xs">{session.walletAddress}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Account role</p>
+                <p className="mt-1 font-medium capitalize">{session.role}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Workspace mode</p>
+                <p className="mt-1 font-medium capitalize">{mode ?? "Not selected"}</p>
+              </div>
+              <div className="flex flex-wrap items-end gap-2">
+                <Button size="sm" variant="outline" asChild>
+                  <Link href="/bounties">Marketplace</Link>
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <Link href="/bounties/create">Create bounty</Link>
+                </Button>
+              </div>
+            </section>
+          </div>
+        ) : (
+          <p className="surface mt-6 p-5 text-sm text-muted-foreground">
+            Connect and sign in with Phantom in the top-right header to view your wallet balance and profile.
+          </p>
+        )}
+      </PageContainer>
+    );
+  }
+
+  if (mode === "solver") {
+    return (
+      <PageContainer>
+        <PageHeader
+          eyebrow="Solver mode"
+          title="My activity"
+          description="Your solving sessions and payouts will appear here. Until then, use the marketplace to find open challenges."
+        />
+        {tabs}
+        {walletCard}
+        <div className="mt-6">
+          <SolverActivityPanel />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  if (mode === "creator") {
+    return (
+      <PageContainer>
+        <PageHeader
+          eyebrow="Creator mode"
+          title="My bounties"
+          description="Live list of bounties you own. Draft, fund, activate, then open owner analytics. Organizations and individuals use this same workspace."
+        />
+        {tabs}
+        {walletCard}
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Button asChild>
+            <Link href="/bounties/create">Create bounty</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/research">Owner analytics</Link>
+          </Button>
+        </div>
+        <section className="mt-6" aria-labelledby="owned-bounties">
+          <h2 id="owned-bounties" className="text-xl font-semibold">
+            Owned bounties
+          </h2>
+          <CreatorBountyList />
+        </section>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer>
       <PageHeader
-        eyebrow="Dashboard"
-        title="Creator and solver overview"
-        description={dashboardSample.notice}
+        eyebrow="Workspace"
+        title="Choose a mode"
+        description="Pick Solver or Creator so the sidebar shows the tools for that job. You can switch any time."
       />
-      <section className="mt-6" aria-labelledby="creator-overview">
-        <h2 id="creator-overview" className="flex items-center gap-2 text-xl font-semibold">
-          <span className="rounded-full border border-brand-purple/40 bg-brand-purple/15 px-2.5 py-0.5 text-xs font-medium text-[#d4b8ff]">Creator</span>
-          Your drafts
-        </h2>
-        <CreatorDraftList />
-        <h3 className="mt-8 text-sm font-semibold tracking-wider text-muted-foreground uppercase">Sample preview</h3>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <StatisticCard label="Created bounties" value={creatorBounties.length} />
-          <StatisticCard label="Active bounties" value={activeBounties} />
-        </div>
-        <div className="mt-4 surface overflow-x-auto">
-          <table className="w-full min-w-[40rem] text-left text-sm">
-            <caption className="px-4 py-3 text-left text-xs text-muted-foreground">
-              Layout fixtures. These rows are not live bounties.
-            </caption>
-            <thead className="bg-secondary/60 text-xs tracking-wider text-muted-foreground uppercase">
-              <tr>
-                <th className="px-4 py-3 font-medium">Title</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Deadline</th>
-              </tr>
-            </thead>
-            <tbody>
-              {creatorBounties.map((bounty) => (
-                <tr key={bounty.id} className="border-t border-border transition-colors hover:bg-card-elevated">
-                  <td className="px-4 py-3">
-                    <span className="font-medium">{bounty.title}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="rounded-full border border-input bg-secondary px-2.5 py-1 text-xs font-medium">
-                      {bounty.closeReason ? closeReasonLabels[bounty.closeReason] : statusLabels[bounty.status]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">{formatDeadline(bounty.deadline)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-      <section className="mt-10" aria-labelledby="solver-overview">
-        <h2 id="solver-overview" className="flex items-center gap-2 text-xl font-semibold">
-          <span className="rounded-full border border-brand-green/40 bg-brand-green/10 px-2.5 py-0.5 text-xs font-medium text-brand-green">Sample</span>
-          Solver activity preview
-        </h2>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <StatisticCard
-            label="Completed challenges"
-            value={dashboardSample.completedChallenges}
-            detail="Sample sessions that reached a stored result."
-          />
-          <StatisticCard
-            label="Rewards earned"
-            value={`${earned} SOL`}
-            detail="Sample confirmed rewards. Pending payouts are separate."
-          />
-        </div>
-        <div className="surface mt-4 p-5">
-          <h3 className="font-medium">Sample solver activity summary</h3>
-          <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <dt className="text-muted-foreground">Sessions started</dt>
-              <dd className="mt-1 font-mono text-lg">{dashboardSample.solverSummary.sessionsStarted}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Correct attempts</dt>
-              <dd className="mt-1 font-mono text-lg">{dashboardSample.solverSummary.correctAttempts}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Incorrect attempts</dt>
-              <dd className="mt-1 font-mono text-lg">{dashboardSample.solverSummary.incorrectAttempts}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Rewards pending</dt>
-              <dd className="mt-1 font-mono text-lg">{dashboardSample.solverSummary.rewardsPending}</dd>
-            </div>
-          </dl>
-        </div>
-      </section>
-      <section className="mt-10" aria-labelledby="recent-activity">
-        <h2 id="recent-activity" className="text-xl font-semibold">
-          Sample recent activity
-        </h2>
-        <ol className="mt-3 grid gap-3">
-          {dashboardSample.activity.map((item) => (
-            <li key={item.id} className="surface border-l-2 border-l-brand-purple px-4 py-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="font-medium">{item.title}</p>
-                <p className="text-xs tracking-[0.12em] text-muted-foreground uppercase">
-                  {item.audience} · {item.when}
-                </p>
-              </div>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">{item.detail}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <ModeCard
+          title="Solver"
+          body="Browse challenges, consent, submit answers, and earn the configured reward when eligible."
+          href="/bounties"
+          mode="solver"
+          cta="Use solver tools"
+        />
+        <ModeCard
+          title="Creator"
+          body="Draft challenges, fund the custodial Devnet treasury, and read aggregate analytics for bounties you own."
+          href="/dashboard"
+          mode="creator"
+          cta="Use creator tools"
+        />
+      </div>
     </PageContainer>
+  );
+}
+
+function ModeCard({
+  title,
+  body,
+  href,
+  mode,
+  cta,
+}: {
+  title: string;
+  body: string;
+  href: string;
+  mode: "solver" | "creator";
+  cta: string;
+}) {
+  return (
+    <article className="surface flex h-full flex-col p-6">
+      <h2 className="text-xl font-semibold">{title}</h2>
+      <p className="mt-2 flex-1 text-sm leading-6 text-muted-foreground">{body}</p>
+      <Button className="mt-6 w-fit" asChild>
+        <Link
+          href={href}
+          onClick={() => {
+            writeOnboardingJourney(mode);
+          }}
+        >
+          {cta}
+        </Link>
+      </Button>
+    </article>
   );
 }

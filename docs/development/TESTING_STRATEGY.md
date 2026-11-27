@@ -4,7 +4,7 @@ Status: the strategy is accepted as the plan for later milestones. Vitest and Je
 
 Related: [requirements](../product/REQUIREMENTS.md), [coding standards](CODING_STANDARDS.md), [blockchain design](../architecture/BLOCKCHAIN_DESIGN.md).
 
-Historical Nest payout concurrency tests lived under `apps/api` (removed). Port remaining DB/HTTP payout parity into `apps/api-rs` tests with a disposable Postgres and a mocked Solana gateway. Apply migrations from [`apps/api-rs/db/prisma/migrations`](../../apps/api-rs/db/prisma/migrations). Do not point integration URLs at Neon.
+Historical Nest payout concurrency tests lived under `apps/api` (removed). Port remaining DB/HTTP payout parity into `apps/api` tests with a disposable Postgres and a mocked Solana gateway. Apply migrations from [`apps/api/db/prisma/migrations`](../../apps/api/db/prisma/migrations). Do not point integration URLs at Neon.
 
 ## Tools
 

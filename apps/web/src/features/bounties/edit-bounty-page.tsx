@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { PageContainer } from "@/components/page-container";
 import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
 import { apiBaseUrl } from "@/features/auth/auth-client";
 import { useAuthSession } from "@/features/auth/auth-session";
 import { BountyClientError, readMyBounty, type BountyDraft } from "./bounty-api";
@@ -44,9 +45,16 @@ export function EditBountyPage({ id }: { id: string }) {
         title={draft?.title ?? "Your bounty"}
         description="Updates stay on the draft. Funding uses two separate SOL transfers to the custodial Devnet treasury."
         actions={
-          <Link href="/dashboard" className="text-sm font-medium text-brand-green hover:underline">
-            Back to drafts
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            {draft ? (
+              <Button size="sm" asChild>
+                <Link href={`/bounties/${draft.id}/fund`}>Continue to funding →</Link>
+              </Button>
+            ) : null}
+            <Button size="sm" variant="outline" asChild>
+              <Link href="/dashboard">My bounties</Link>
+            </Button>
+          </div>
         }
       />
       {!session ? <p className="mt-6 text-sm text-muted-foreground">Sign in to edit this draft.</p> : null}

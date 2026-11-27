@@ -8,11 +8,11 @@
   "scripts": {
     "dev": "turbo dev --filter=@solversbounty/web --filter=@solversbounty/shared",
     "dev:web": "pnpm --filter @solversbounty/web dev",
-    "dev:api": "cargo run --manifest-path apps/api-rs/Cargo.toml",
+    "dev:api": "cargo run --manifest-path apps/api/Cargo.toml",
     "build": "turbo build --filter=@solversbounty/web --filter=@solversbounty/shared --filter=@solversbounty/typescript-config",
     "lint": "turbo lint --filter=@solversbounty/web --filter=@solversbounty/shared",
     "test": "turbo test --filter=@solversbounty/web --filter=@solversbounty/shared",
-    "test:api": "cargo test --manifest-path apps/api-rs/Cargo.toml",
+    "test:api": "cargo test --manifest-path apps/api/Cargo.toml",
     "typecheck": "turbo typecheck --filter=@solversbounty/web --filter=@solversbounty/shared"
   },
   "devDependencies": {
