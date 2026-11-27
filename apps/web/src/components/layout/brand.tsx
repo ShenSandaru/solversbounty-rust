@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export function Brand({
   className,
-  subtitle = "Devnet research preview",
+  subtitle = "Cognitive bounty network",
 }: {
   className?: string;
   subtitle?: string;

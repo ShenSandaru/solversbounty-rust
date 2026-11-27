@@ -15,6 +15,7 @@ import { ModeSwitch } from "./mode-switch";
 import { isNavActive, navItemsForMode, pageContext } from "./navigation";
 import { SiteFooter } from "./site-footer";
 import { SidebarGuideCard, SystemGuideModal } from "./system-guide";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -123,6 +124,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <ThemeToggle />
               <button
                 type="button"
                 onClick={() => setGuideOpen(true)}

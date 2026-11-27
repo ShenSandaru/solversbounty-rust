@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 import { Brand } from "@/components/layout/brand";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { useWalletAuth } from "@/features/auth/use-wallet-auth";
 import { MarketingAccountMenu, MarketingSignIn } from "./marketing-account";
@@ -48,6 +49,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
           <div className="flex min-w-0 items-center justify-end gap-2">
+            <ThemeToggle />
             <div className="hidden items-center gap-2 lg:flex">
               {signedIn ? (
                 <MarketingAccountMenu auth={auth} layout="header" />

@@ -3,23 +3,24 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { HealthStatus } from "@/features/home/health-status";
 import { HeroArt } from "./hero-art";
+import { BlurText, CognitiveCanvas, ShimmerPlaceholder, ShinyBadge, SpotlightCard } from "./react-bits";
 import { Reveal } from "./reveal";
 
 const solverSteps = [
   {
     step: "1",
     title: "Browse open challenges",
-    body: "The marketplace lists active Devnet challenges. You can read public prompts without connecting a wallet.",
+    body: "Explore active cognitive challenges in the marketplace. Read prompts publicly before connecting a wallet.",
   },
   {
     step: "2",
-    title: "Consent, then submit",
-    body: "A solving session starts only after you accept research-consent-v1. The backend checks your answer. This website does not.",
+    title: "Consent & submit",
+    body: "Review and accept the research consent, then submit your answer. All verification runs securely on the server.",
   },
   {
     step: "3",
-    title: "Earn the same configured reward",
-    body: "Every eligible correct solver receives the same reward, once, while the funded pool and the solver cap allow it.",
+    title: "Earn instant SOL rewards",
+    body: "Every eligible correct solver receives the configured SOL payout automatically while the reward pool remains open.",
   },
 ] as const;
 
@@ -27,39 +28,37 @@ const creatorSteps = [
   {
     step: "1",
     title: "Draft a challenge",
-    body: "Publish a public question and store a protected expected answer. Saving a draft does not move SOL.",
+    body: "Define your public prompt, encrypted expected answer, attempt limit, and reward terms. Saving a draft is free.",
   },
   {
     step: "2",
-    title: "Fund two Devnet transfers",
-    body: "Send the reward pool and a separate 5% platform commission to the custodial treasury. Phantom must approve each transfer.",
+    title: "Fund the reward pool",
+    body: "Approve the reward pool and separate 5% platform fee transfers in Phantom to the custodial Devnet treasury.",
   },
   {
     step: "3",
-    title: "Activate and review aggregates",
-    body: "Once active, solvers can join. You later see consented aggregate analytics for bounties you own, not individual solver records.",
+    title: "Activate & review insights",
+    body: "Publish to the marketplace and track consented aggregate metrics—participants, accuracy, attempts, and completion time.",
   },
 ] as const;
 
 const trustPoints = [
-  "This demonstration runs on Solana Devnet, not mainnet.",
-  "Rewards are native SOL transfers from a custodial Devnet treasury controlled by the backend. This is not trustless escrow and not a custom Solana program.",
-  "Research participation requires explicit consent. Wallet login alone does not imply research consent.",
-  "Research analytics are aggregate. Creators and administrators do not see individual solver research records or solver wallet addresses in analytics.",
-  "Solvers do not pay a participation fee. Chain transfers are public. Wallet addresses are pseudonymous.",
+  "Settlements currently run on Solana Devnet via a backend-managed custodial Devnet treasury (not trustless escrow).",
+  "Research recording requires explicit opt-in consent. Connecting or signing in with a wallet never implies research consent.",
+  "Analytics are strictly aggregated. Creators and administrators never see individual solver records or wallet addresses in analytics.",
+  "Solvers pay zero participation fees. Wallet addresses are pseudonymous and on-chain transfers are public.",
 ] as const;
 
 export function LandingPage() {
   return (
     <main>
       <section className="relative overflow-hidden">
-        <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(16rem,0.85fr)] lg:px-8 lg:py-24">
+        <CognitiveCanvas />
+        <div className="relative z-10 mx-auto grid w-full max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(16rem,0.85fr)] lg:px-8 lg:py-24">
           <div>
-            <p className="inline-flex items-center rounded-full border border-brand-green/30 bg-brand-green/10 px-3 py-1 text-xs font-medium tracking-[0.16em] text-brand-green uppercase">
-              Solana Devnet demonstration
-            </p>
+            <ShinyBadge>Powered by Solana</ShinyBadge>
             <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
-              Great ideas deserve <span className="gradient-text">great rewards.</span>
+              <BlurText text="Great ideas deserve great rewards." accentWord="great rewards." />
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
               {APP_NAME} connects organizations and researchers with human intelligence through funded
@@ -74,8 +73,13 @@ export function LandingPage() {
               </Button>
             </div>
             <p className="mt-4 text-sm text-muted-foreground">
-              Browsing is public. Connecting a wallet is only required for authenticated actions.
+              Free to browse. Connect your Phantom wallet only when you are ready to create or solve.
             </p>
+            <div className="mt-8 grid gap-3 sm:grid-cols-3">
+              <ShimmerPlaceholder label="Verification" value="Server-side" hint="Encrypted answers, Rust API" />
+              <ShimmerPlaceholder label="Payouts" value="Native SOL" hint="Custodial Devnet treasury" />
+              <ShimmerPlaceholder label="Research" value="Aggregates" hint="Consented 4-metric insights" />
+            </div>
           </div>
           <div className="flex justify-center lg:justify-end">
             <HeroArt />
@@ -115,7 +119,7 @@ export function LandingPage() {
       <Reveal>
         <section
           id="how-it-works"
-          className="scroll-mt-24 border-y border-white/10 bg-[#18181f]/60"
+          className="scroll-mt-24 border-y border-border bg-card/60"
           aria-labelledby="how-heading"
         >
           <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
@@ -273,10 +277,10 @@ export function LandingPage() {
 
 function FeatureCard({ title, body }: { title: string; body: string }) {
   return (
-    <article className="glass h-full p-5 transition-colors hover:border-brand-purple/50">
+    <SpotlightCard className="glass h-full p-5 transition-colors hover:border-brand-purple/50">
       <h3 className="text-lg font-semibold">{title}</h3>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
-    </article>
+    </SpotlightCard>
   );
 }
 
@@ -294,7 +298,7 @@ function JourneyCard({
   cta: string;
 }) {
   return (
-    <article className="glass gradient-border relative flex h-full flex-col overflow-hidden p-6">
+    <SpotlightCard className="glass gradient-border flex h-full flex-col p-6">
       <p className="text-xs font-semibold tracking-[0.14em] text-brand-green uppercase">{eyebrow}</p>
       <h3 className="mt-2 text-2xl font-semibold">{title}</h3>
       <ol className="mt-6 grid flex-1 gap-4">
@@ -313,6 +317,6 @@ function JourneyCard({
       <Button className="mt-8 w-fit" asChild>
         <Link href={href}>{cta}</Link>
       </Button>
-    </article>
+    </SpotlightCard>
   );
 }
