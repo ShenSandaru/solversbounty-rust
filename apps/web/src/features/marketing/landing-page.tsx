@@ -204,7 +204,7 @@ export function LandingPage() {
       </Reveal>
 
       <Reveal>
-        <section className="border-y border-white/10 bg-[#18181f]/60" aria-labelledby="research-heading">
+        <section className="border-y border-border bg-card/60" aria-labelledby="research-heading">
           <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
             <p className="gradient-text text-xs font-semibold tracking-[0.16em] uppercase">Research analytics</p>
             <h2 id="research-heading" className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -244,7 +244,7 @@ export function LandingPage() {
             </h2>
             <ul className="mt-5 grid gap-3 text-sm leading-6 text-muted-foreground sm:grid-cols-2">
               {trustPoints.map((point) => (
-                <li key={point} className="rounded-xl border border-white/10 bg-background/40 px-4 py-3">
+                <li key={point} className="rounded-xl border border-border bg-background/60 px-4 py-3">
                   {point}
                 </li>
               ))}
@@ -256,7 +256,7 @@ export function LandingPage() {
         </section>
       </Reveal>
 
-      <section className="border-t border-white/10">
+      <section className="border-t border-border">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-start justify-between gap-6 px-4 py-16 sm:px-6 lg:flex-row lg:items-center lg:px-8">
           <div>
             <h2 className="text-3xl font-semibold tracking-tight">Choose how you want to start.</h2>

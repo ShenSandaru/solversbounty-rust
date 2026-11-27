@@ -165,7 +165,7 @@ export function MarketingAccountMenu({
         </span>
       </button>
       {open ? (
-        <div id={menuId} className="absolute right-0 z-50 mt-2 rounded-xl border border-border bg-[#18181f] shadow-xl">
+        <div id={menuId} className="absolute right-0 z-50 mt-2 rounded-xl border border-border bg-card shadow-xl">
           {panel}
         </div>
       ) : null}

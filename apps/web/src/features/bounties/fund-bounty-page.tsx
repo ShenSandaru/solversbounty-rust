@@ -196,7 +196,7 @@ function FundingSummary({
           {pool ? <ObligationRow label="Reward pool" obligation={pool} pending={pending.reward_pool} disabled={!walletMatches || busy !== null} sending={busy === "reward_pool"} onSend={() => onSend("reward_pool")} onCheck={() => onCheck("reward_pool")} /> : null}
         </section>
         <section className="surface relative overflow-hidden border-brand-purple/40 p-5" aria-labelledby="commission-heading">
-          <p className="text-xs font-semibold tracking-[0.12em] text-[#d4b8ff] uppercase">Transfer 2 · Platform fee</p>
+          <p className="text-xs font-semibold tracking-[0.12em] text-brand-purple uppercase">Transfer 2 · Platform fee</p>
           <h2 id="commission-heading" className="mt-1 text-lg font-semibold">Commission (5%)</h2>
           <p className="mt-3 font-mono text-3xl font-semibold">{formatLamportsAsSol(BigInt(funding.commissionLamports))} <span className="text-sm">SOL</span></p>
           <p className="mt-2 text-sm text-muted-foreground">Extra. It is not taken from the reward pool.</p>

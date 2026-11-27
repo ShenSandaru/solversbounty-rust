@@ -32,27 +32,28 @@
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --background: #f6f7fb;
+  --background: #f8f9fc;
   --foreground: #14141f;
   --card: #ffffff;
-  --card-elevated: #f0f2f8;
+  --card-elevated: #f1f3f9;
   --card-foreground: #14141f;
-  --primary: #7c3aed;
+  --primary: #6d28d9;
   --primary-foreground: #ffffff;
-  --secondary: #eceef5;
+  --secondary: #eef0f7;
   --secondary-foreground: #1f2030;
-  --muted: #eef0f6;
-  --muted-foreground: #525368;
+  --muted: #f1f3f9;
+  --muted-foreground: #4b4d63;
   --accent: #059669;
   --accent-foreground: #ffffff;
   --destructive: #dc2626;
-  --border: #dcdff0;
-  --input: #cfd4e6;
-  --ring: #7c3aed;
-  --reward: #059669;
+  --border: #dfe3ef;
+  --input: #cfd5e6;
+  --ring: #6d28d9;
+  --reward: #047857;
   --warning: #b45309;
-  --brand-purple: #7c3aed;
+  --brand-purple: #6d28d9;
   --brand-green: #059669;
+  --background-image-brand-gradient: linear-gradient(135deg, #6d28d9 0%, #059669 100%);
 }
 
 @theme inline {
