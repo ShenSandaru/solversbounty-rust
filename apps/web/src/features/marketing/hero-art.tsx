@@ -13,8 +13,10 @@ const comicStates = [
 export function HeroArt() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 });
-  const [loveMode, setLoveMode] = useState(false);
+  const [nearLove, setNearLove] = useState(false);
+  const [ctaLove, setCtaLove] = useState(false);
   const [bubbleIndex, setBubbleIndex] = useState(0);
+  const loveMode = nearLove || ctaLove;
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -43,18 +45,57 @@ export function HeroArt() {
       const rawDx = event.clientX - cx;
       const rawDy = event.clientY - cy;
       const dist = Math.hypot(rawDx, rawDy);
-      setLoveMode(dist < 150);
+      setNearLove(dist < 150);
       const dx = Math.max(-1, Math.min(1, rawDx / 260));
       const dy = Math.max(-1, Math.min(1, rawDy / 260));
       setEyeOffset({ x: dx * 5.5, y: dy * 3.5 });
     }
+    function isGetStartedCta(target: EventTarget | null): boolean {
+      if (!(target instanceof Element)) {
+        return false;
+      }
+      const link = target.closest('a[href="/get-started"]');
+      return Boolean(link);
+    }
+    function onPointerOver(event: PointerEvent) {
+      if (isGetStartedCta(event.target)) {
+        setCtaLove(true);
+      }
+    }
+    function onPointerOut(event: PointerEvent) {
+      if (isGetStartedCta(event.target)) {
+        setCtaLove(false);
+      }
+    }
+    function onFocusIn(event: FocusEvent) {
+      if (isGetStartedCta(event.target)) {
+        setCtaLove(true);
+      }
+    }
+    function onFocusOut(event: FocusEvent) {
+      if (isGetStartedCta(event.target)) {
+        setCtaLove(false);
+      }
+    }
     window.addEventListener("pointermove", onPointerMove, { passive: true });
-    return () => window.removeEventListener("pointermove", onPointerMove);
+    document.addEventListener("pointerover", onPointerOver);
+    document.addEventListener("pointerout", onPointerOut);
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      document.removeEventListener("pointerover", onPointerOver);
+      document.removeEventListener("pointerout", onPointerOut);
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
+    };
   }, []);
 
-  const currentBubble = loveMode
-    ? { text: "SOL love! ◎💜", accent: "text-brand-green" }
-    : (comicStates[bubbleIndex] ?? comicStates[0]);
+  const currentBubble = ctaLove
+    ? { text: "Yay! Let's get started! 💜🙌", accent: "text-brand-green" }
+    : nearLove
+      ? { text: "SOL love! ◎💜", accent: "text-brand-green" }
+      : (comicStates[bubbleIndex] ?? comicStates[0]);
 
   return (
     <div
@@ -214,21 +255,41 @@ export function HeroArt() {
               strokeLinejoin="round"
             />
 
-            {/* Left arm */}
-            <path
-              d="M84 162c-16 4-24 14-24 28"
-              stroke="url(#bot-grad)"
-              strokeWidth="8"
-              strokeLinecap="round"
-            />
-            {/* Right waving arm */}
-            <path
-              d="M176 162c16-4 24-14 26-26"
-              stroke="url(#bot-grad)"
-              strokeWidth="8"
-              strokeLinecap="round"
-            />
-            <circle cx="203" cy="133" r="6" fill="#14F195" />
+            {/* Left arm (raises up in cheer/love pose when hovering Get Started or in love mode) */}
+            {loveMode ? (
+              <>
+                <path
+                  d="M84 162c-16-4-24-14-26-28"
+                  stroke="url(#bot-grad)"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                />
+                <circle cx="57" cy="131" r="6" fill="#f472b6" />
+                <path
+                  d="M176 162c16-4 24-14 26-28"
+                  stroke="url(#bot-grad)"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                />
+                <circle cx="203" cy="131" r="6" fill="#f472b6" />
+              </>
+            ) : (
+              <>
+                <path
+                  d="M84 162c-16 4-24 14-24 28"
+                  stroke="url(#bot-grad)"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M176 162c16-4 24-14 26-26"
+                  stroke="url(#bot-grad)"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                />
+                <circle cx="203" cy="133" r="6" fill="#14F195" />
+              </>
+            )}
           </g>
         </svg>
       </div>
