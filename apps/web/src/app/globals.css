@@ -1,0 +1,196 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Dark-only identity. Purple #9945FF and green #14F195 are accents; text stays high contrast. */
+:root {
+  color-scheme: dark;
+  --radius: 0.75rem;
+  --background: #111116;
+  --foreground: #f2f2f7;
+  --card: #18181f;
+  --card-elevated: #1f1f28;
+  --card-foreground: #f2f2f7;
+  --primary: #9945ff;
+  --primary-foreground: #ffffff;
+  --secondary: #23232d;
+  --secondary-foreground: #e6e6ee;
+  --muted: #1c1c24;
+  --muted-foreground: #a3a3b5;
+  --accent: #14f195;
+  --accent-foreground: #07110c;
+  --destructive: #ff7a8a;
+  --border: #2b2b37;
+  --input: #34343f;
+  --ring: #b27bff;
+  --reward: #14f195;
+  --warning: #ffc861;
+  --brand-purple: #9945ff;
+  --brand-green: #14f195;
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-elevated: var(--card-elevated);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-reward: var(--reward);
+  --color-warning: var(--warning);
+  --color-brand-purple: var(--brand-purple);
+  --color-brand-green: var(--brand-green);
+  --background-image-brand-gradient: linear-gradient(135deg, #9945ff 0%, #14f195 100%);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(60rem 28rem at 85% -10%, rgb(153 69 255 / 0.12), transparent 70%),
+      radial-gradient(40rem 24rem at 0% 0%, rgb(20 241 149 / 0.05), transparent 70%);
+    background-attachment: fixed;
+  }
+
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+}
+
+@utility surface {
+  @apply rounded-xl border border-border bg-card;
+}
+
+@utility surface-interactive {
+  @apply rounded-xl border border-border bg-card transition-colors hover:border-brand-purple/60 hover:bg-card-elevated;
+}
+
+@utility gradient-text {
+  @apply bg-brand-gradient bg-clip-text text-transparent;
+}
+
+@utility gradient-border {
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 2px;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #9945ff, #14f195);
+    opacity: 0.85;
+  }
+}
+
+@utility glass {
+  @apply rounded-2xl border border-white/10 bg-[#22222B]/80 shadow-[0_0_0_1px_rgb(153_69_255/0.08)_inset] backdrop-blur-md;
+}
+
+@keyframes hero-shift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(-3%, 2%, 0) scale(1.08);
+  }
+}
+
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -12px, 0);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@keyframes orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.hero-mesh {
+  animation: hero-shift 22s ease-in-out infinite alternate;
+}
+
+.float-slow {
+  animation: float-slow 7s ease-in-out infinite;
+}
+
+.pulse-glow {
+  animation: pulse-glow 4.5s ease-in-out infinite;
+}
+
+.orbit {
+  animation: orbit 28s linear infinite;
+  transform-origin: 50% 50%;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(1.25rem);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s ease;
+}
+
+.reveal[data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
