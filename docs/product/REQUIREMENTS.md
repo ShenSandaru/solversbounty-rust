@@ -278,9 +278,9 @@ Acceptance criteria:
 ### BOUNTY-007 Fund before active
 
 - Priority: P0
-- Status: `in_progress`
+- Status: `implemented`
 - Modules: bounties, solana
-- Description: Status becomes `active` only after the full solver reward pool and the separate 5% commission are verified ([ADR-007](../decisions/ADR-007-company-platform-commission.md), [ADR-012](../decisions/ADR-012-two-devnet-funding-transfers.md), PAY-018). Mocked RPC tests cover activation. A live Devnet transfer has not been verified.
+- Description: Status becomes `active` only after the full solver reward pool and the separate 5% commission are verified ([ADR-007](../decisions/ADR-007-company-platform-commission.md), [ADR-012](../decisions/ADR-012-two-devnet-funding-transfers.md), PAY-018). Mocked RPC tests cover activation. Live Devnet evidence: `apps/api-rs/scripts/devnet-funding-smoke.mjs` activated bounty `fdc847c9-2da0-4474-8c1f-b4e9b561adc8` on 2026-11-27 after both confirmed transfers.
 
 Acceptance criteria:
 
@@ -388,9 +388,9 @@ Acceptance criteria:
 ### BOUNTY-016 Show funding
 
 - Priority: P0
-- Status: `in_progress`
+- Status: `implemented`
 - Modules: bounties, web creator
-- Description: The owner sees required principal, confirmed deposits, and the ledger buckets. The funding screen reads those figures from the API. A live Devnet deposit has not been verified.
+- Description: The owner sees required principal, confirmed deposits, and the ledger buckets. The funding screen reads those figures from the API. Live Devnet deposits confirmed via `GET /bounties/{id}/funding` during `devnet-funding-smoke.mjs` on 2026-11-27.
 
 Acceptance criteria:
 
@@ -825,9 +825,9 @@ Acceptance criteria:
 ### PAY-008 Verify deposits
 
 - Priority: P0
-- Status: `in_progress`
+- Status: `implemented`
 - Modules: solana, bounties
-- Description: A bounty activates only when a confirmed transfer to the treasury covers the principal and carries that bounty's deposit reference ([ADR-012](../decisions/ADR-012-two-devnet-funding-transfers.md)). Mocked RPC tests cover the checks. A live Devnet transfer has not been verified.
+- Description: A bounty activates only when a confirmed transfer to the treasury covers the principal and carries that bounty's deposit reference ([ADR-012](../decisions/ADR-012-two-devnet-funding-transfers.md)). Mocked RPC tests cover the checks. Live Devnet evidence: reward_pool sig `4vVHPyzcVf4HedHEeHpNaLxEVdZVPMQMupzhREwxn25AXoP6G2wnNH6cQmkkVodEsZKDzeABJZ6TzDzzcaKJ4G2q` accepted for bounty `fdc847c9-2da0-4474-8c1f-b4e9b561adc8` on 2026-11-27.
 
 Acceptance criteria:
 
@@ -961,9 +961,9 @@ Acceptance criteria:
 ### PAY-018 Record platform commission
 
 - Priority: P0
-- Status: `in_progress`
+- Status: `implemented`
 - Modules: bounties, solana
-- Description: [ADR-007](../decisions/ADR-007-company-platform-commission.md) and [ADR-012](../decisions/ADR-012-two-devnet-funding-transfers.md). The creator pays 5% of the solver reward pool in addition to the pool. Mocked tests cover the separate obligation. A live Devnet commission transfer has not been verified.
+- Description: [ADR-007](../decisions/ADR-007-company-platform-commission.md) and [ADR-012](../decisions/ADR-012-two-devnet-funding-transfers.md). The creator pays 5% of the solver reward pool in addition to the pool. Mocked tests cover the separate obligation. Live Devnet evidence: commission sig `24h32zAMHhmEjQbeZjkQev67TpqqxnEtkZAMgGw64Btz1AMoEkR3z8Pkrz3ZGTg3bjfvDwBQe9e5XKKzh6YDypB1` confirmed for bounty `fdc847c9-2da0-4474-8c1f-b4e9b561adc8` on 2026-11-27.
 
 Acceptance criteria:
 

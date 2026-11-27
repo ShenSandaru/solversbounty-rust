@@ -4,7 +4,7 @@
 
 SolversBounty is a wallet-authenticated cognitive micro-task marketplace and human reasoning research platform. Creators publish predefined challenges, fund a fixed SOL reward pool on Solana Devnet, pay a separate 5% commission on that pool, and study how people attempt those challenges. Solvers connect a wallet, submit answers, and receive the same micro-reward when the backend judges them eligible. Solvers do not pay a participation fee.
 
-**Document status:** Phase 5 security review, Phase 4 backend foundation, and a static frontend preview. Product workflows are not implemented.
+**Document status:** Product implementation in progress. Sole API is Rust `apps/api-rs` ([ADR-013](docs/decisions/ADR-013-rust-api-modular-monolith.md)). NestJS has been removed. Requirement statuses live in [REQUIREMENTS.md](docs/product/REQUIREMENTS.md). Live Phantom login, live Devnet funding, and live payout broadcast are not verified yet.
 
 The hackathon MVP uses a **backend-managed custodial Devnet treasury**. Wallet login and SOL transfers are on Solana. Custody of reward funds is not trustless escrow. See [ADR-002](docs/decisions/ADR-002-custodial-devnet-treasury.md).
 
@@ -41,11 +41,12 @@ Details and the proposal register: [Implementation plan](docs/development/IMPLEM
 
 ## Repository overview
 
-The repository contains the documentation foundation, the application scaffold, a static web preview, and the API infrastructure foundation. Prisma models represent the proposed database design and have not been migrated. Product workflows are not built.
+Monorepo with Next.js web, Rust Axum API, shared TypeScript contracts, and product docs. Schema and migrations live under `apps/api-rs/db` (sqlx at runtime). License is [MIT](LICENSE).
 
 ```text
 .
 ├── AGENTS.md
+├── LICENSE
 ├── README.md
 ├── apps/
 │   ├── api-rs/       Rust Axum API (sqlx + db schema)
@@ -83,16 +84,16 @@ pnpm typecheck
 
 `GET /health` reports process liveness. `GET /health/ready` reports whether a configured PostgreSQL connection is up. Copy `apps/api-rs/.env.example` and `apps/web` env as needed. Development can start without `DATABASE_URL`; a bad URL fails readiness, not liveness. Production requires `DATABASE_URL` with `sslmode=require` on Neon.
 
-Preview routes in the web app use sample data. They do not authenticate, save a bounty, verify an answer, or move SOL.
-
-| Route | Preview |
+| Route | Role |
 | --- | --- |
 | `/` | Home |
-| `/bounties` | Marketplace |
-| `/bounties/create` | Create form, validated only in the browser |
-| `/bounties/[id]` | Challenge details |
+| `/bounties` | Marketplace (API-backed active list) |
+| `/bounties/create` | Create draft (requires signed-in session) |
+| `/bounties/[id]` | Challenge details / fund / solve |
 | `/dashboard` | Creator and solver overview |
-| `/research` | Demonstration analytics |
+| `/research` | Research analytics (ADR-009 aggregates when authorized) |
+
+API-proven pieces include nonce auth, draft create/edit, marketplace listing, consent/session/submit/verify with E1 payout reservation, and creator analytics aggregates. Live ADR-012 two-transfer funding and activate succeeded via [`apps/api-rs/scripts/devnet-funding-smoke.mjs`](apps/api-rs/scripts/devnet-funding-smoke.mjs) (BOUNTY-007, BOUNTY-016, PAY-008, PAY-018). Still open: live Phantom browser smoke (AUTH-001 and related), and live treasury payout broadcast (`PAYOUT_BROADCAST_ENABLED` defaults off; SystemProgram+Memo signing is implemented). Manual wallet check: [MANUAL_PHANTOM_AUTH.md](docs/development/MANUAL_PHANTOM_AUTH.md).
 
 Read [AGENTS.md](AGENTS.md) before changing product behavior. Update [progress](docs/development/PROGRESS.md) when a milestone actually changes. Do not mark a requirement `implemented` until its acceptance criteria pass.
 
