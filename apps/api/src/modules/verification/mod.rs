@@ -30,11 +30,7 @@ pub fn answers_match(method: VerificationMethod, expected: &str, submitted: &str
 }
 
 fn normalize_space(value: &str) -> String {
-    value
-        .trim()
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join(" ")
+    value.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 fn numeric_text(value: &str) -> Option<String> {
@@ -153,5 +149,20 @@ mod tests {
             "42",
             "forty-two"
         ));
+    }
+
+    #[test]
+    fn mcq_exact_match_accepts_correct_and_rejects_wrong_option() {
+        assert!(answers_match(
+            VerificationMethod::Exact,
+            "Option B",
+            "Option B"
+        ));
+        assert!(!answers_match(
+            VerificationMethod::Exact,
+            "Option B",
+            "Option A"
+        ));
+        assert!(VerificationMethod::from_db("manual").is_none());
     }
 }

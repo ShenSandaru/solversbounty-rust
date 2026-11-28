@@ -129,18 +129,30 @@ pub async fn submit_answer(
             ));
         }
     }
+    let question_id = match body.get("questionId").and_then(|v| v.as_str()) {
+        Some(raw) if !raw.is_empty() => Some(parse_uuid(raw)?),
+        _ => None,
+    };
     let key = parse_answer_key(state.config.answer_encryption_key.as_deref())
         .map_err(|e| ApiError::not_ready(e.message))?;
-    let material = repo::verification_material(pool, session_id, user.id)
+    let material = repo::verification_material(pool, session_id, user.id, question_id)
         .await
         .map_err(|_| ApiError::internal())?
         .ok_or_else(|| ApiError::not_found("Solving session not found."))?;
-    let method = VerificationMethod::from_db(&material.1).ok_or_else(|| ApiError::internal())?;
-    let expected = decrypt_answer(&material.0, &key).map_err(|_| ApiError::internal())?;
+    let method = VerificationMethod::from_db(&material.2).ok_or_else(ApiError::internal)?;
+    let expected = decrypt_answer(&material.1, &key).map_err(|_| ApiError::internal())?;
     let correct = answers_match(method, &expected, &answer);
-    let saved = repo::submit_answer(pool, session_id, user.id, &answer, Utc::now(), correct)
-        .await
-        .map_err(|_| ApiError::internal())?;
+    let saved = repo::submit_answer(
+        pool,
+        session_id,
+        user.id,
+        material.0,
+        &answer,
+        Utc::now(),
+        correct,
+    )
+    .await
+    .map_err(|_| ApiError::internal())?;
     match saved {
         SubmitAnswerResult::Missing => Err(ApiError::not_found("Solving session not found.")),
         SubmitAnswerResult::Inactive => Err(ApiError::conflict(

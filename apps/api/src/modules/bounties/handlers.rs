@@ -138,12 +138,22 @@ pub async fn patch_bounty(
         .map_err(|_| ApiError::internal())?;
     match updated {
         Ok(row) => {
-            let expected = decrypt_answer(&row.expected_answer_ciphertext, &key)
-                .map_err(|_| ApiError::internal())?;
-            Ok(Json(private_json(&row, &expected)))
+            let mut decrypted = Vec::with_capacity(row.questions.len());
+            for q in &row.questions {
+                let ans = decrypt_answer(&q.expected_answer_ciphertext, &key)
+                    .map_err(|_| ApiError::internal())?;
+                decrypted.push(ans);
+            }
+            let expected = decrypted.first().cloned().unwrap_or_default();
+            Ok(Json(crate::modules::bounties::dto::private_json_with_questions(
+                &row,
+                &expected,
+                &decrypted,
+            )))
         }
         Err("missing") => Err(ApiError::not_found("Bounty not found.")),
         Err("not_draft") => Err(ApiError::conflict("Only draft bounties can be edited.")),
+        Err("invalid_question") => Err(ApiError::validation("Question does not belong to this bounty.", vec![])),
         Err(_) => Err(ApiError::internal()),
     }
 }

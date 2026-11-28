@@ -5,6 +5,27 @@ use crate::modules::bounties::funding_ledger::LedgerBuckets;
 use crate::modules::bounties::lamports::{commission_lamports, principal_lamports};
 
 #[derive(Debug, Clone)]
+pub struct QuestionRecord {
+    pub id: String,
+    pub order_index: i32,
+    pub question_type: String,
+    pub prompt: String,
+    pub options: Option<Value>,
+    pub expected_answer_ciphertext: String,
+    pub encryption_key_id: String,
+    pub verification_method: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct PublicQuestionRecord {
+    pub id: String,
+    pub order_index: i32,
+    pub question_type: String,
+    pub prompt: String,
+    pub options: Option<Value>,
+}
+
+#[derive(Debug, Clone)]
 pub struct OwnerBounty {
     pub id: String,
     pub title: String,
@@ -21,6 +42,7 @@ pub struct OwnerBounty {
     pub expected_answer_ciphertext: String,
     pub encryption_key_id: String,
     pub verification_method: String,
+    pub questions: Vec<QuestionRecord>,
 }
 
 #[derive(Debug, Clone)]
@@ -39,6 +61,7 @@ pub struct PublicBountyRecord {
     pub deadline: DateTime<Utc>,
     pub close_reason: Option<String>,
     pub rewarded_count: i32,
+    pub questions: Vec<PublicQuestionRecord>,
 }
 
 #[derive(Debug, Clone)]
@@ -79,14 +102,43 @@ pub struct StoredAttempt {
 }
 
 pub fn private_json(row: &OwnerBounty, expected_answer: &str) -> Value {
+    private_json_with_questions(row, expected_answer, &[])
+}
+
+pub fn private_json_with_questions(
+    row: &OwnerBounty,
+    expected_answer: &str,
+    decrypted_answers: &[String],
+) -> Value {
     let principal = principal_lamports(row.reward_lamports, row.max_rewarded_solvers);
     let commission = commission_lamports(principal);
+    let questions: Vec<Value> = row
+        .questions
+        .iter()
+        .enumerate()
+        .map(|(idx, q)| {
+            let ans = decrypted_answers
+                .get(idx)
+                .map(|s| s.as_str())
+                .unwrap_or(expected_answer);
+            json!({
+                "id": q.id,
+                "orderIndex": q.order_index,
+                "questionType": q.question_type,
+                "prompt": q.prompt,
+                "options": q.options,
+                "verificationMethod": q.verification_method,
+                "expectedAnswer": ans,
+            })
+        })
+        .collect();
     json!({
         "id": row.id,
         "title": row.title,
         "description": row.description,
         "instructions": row.instructions,
         "prompt": row.prompt,
+        "questions": questions,
         "category": row.category,
         "verificationMethod": row.verification_method,
         "expectedAnswer": expected_answer,
@@ -102,12 +154,26 @@ pub fn private_json(row: &OwnerBounty, expected_answer: &str) -> Value {
 }
 
 pub fn public_json(row: &PublicBountyRecord) -> Value {
+    let questions: Vec<Value> = row
+        .questions
+        .iter()
+        .map(|q| {
+            json!({
+                "id": q.id,
+                "orderIndex": q.order_index,
+                "questionType": q.question_type,
+                "prompt": q.prompt,
+                "options": q.options,
+            })
+        })
+        .collect();
     json!({
         "id": row.id,
         "title": row.title,
         "description": row.description,
         "instructions": row.instructions,
         "prompt": row.prompt,
+        "questions": questions,
         "category": row.category,
         "status": row.status,
         "rewardLamports": row.reward_lamports.to_string(),

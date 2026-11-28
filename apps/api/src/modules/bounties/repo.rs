@@ -39,20 +39,25 @@ pub async fn create_bounty(
     .bind(now)
     .execute(&mut *tx)
     .await?;
-    let question_id = Uuid::new_v4();
-    sqlx::query(&format!(
-        "INSERT INTO {table} (id, bounty_id, prompt, expected_answer_ciphertext, encryption_key_id, verification_method)
-         VALUES ($1, $2, $3, $4, $5, $6::verification_method)",
-        table = tables::BOUNTY_QUESTIONS
-    ))
-    .bind(question_id)
-    .bind(bounty_id)
-    .bind(&input.prompt)
-    .bind(&input.expected_answer_ciphertext)
-    .bind(&input.encryption_key_id)
-    .bind(&input.verification_method)
-    .execute(&mut *tx)
-    .await?;
+    for q in &input.questions {
+        let question_id = Uuid::new_v4();
+        sqlx::query(&format!(
+            "INSERT INTO {table} (id, bounty_id, order_index, question_type, prompt, options, expected_answer_ciphertext, encryption_key_id, verification_method)
+             VALUES ($1, $2, $3, $4::question_type, $5, $6, $7, $8, $9::verification_method)",
+            table = tables::BOUNTY_QUESTIONS
+        ))
+        .bind(question_id)
+        .bind(bounty_id)
+        .bind(q.order_index)
+        .bind(&q.question_type)
+        .bind(&q.prompt)
+        .bind(&q.options)
+        .bind(&q.expected_answer_ciphertext)
+        .bind(&q.encryption_key_id)
+        .bind(&q.verification_method)
+        .execute(&mut *tx)
+        .await?;
+    }
     audit(
         &mut tx,
         Some(creator_id),
@@ -102,17 +107,85 @@ pub async fn update_draft(
     .bind(id)
     .execute(&mut *tx)
     .await?;
-    sqlx::query(&format!(
-        "UPDATE {table} SET prompt = $1, expected_answer_ciphertext = $2, encryption_key_id = $3, verification_method = $4::verification_method WHERE bounty_id = $5",
+    let existing_ids: Vec<Uuid> = sqlx::query_scalar(&format!(
+        "SELECT id FROM {table} WHERE bounty_id = $1",
         table = tables::BOUNTY_QUESTIONS
     ))
-    .bind(&input.prompt)
-    .bind(&input.expected_answer_ciphertext)
-    .bind(&input.encryption_key_id)
-    .bind(&input.verification_method)
+    .bind(id)
+    .fetch_all(&mut *tx)
+    .await?;
+
+    let mut kept_ids = Vec::new();
+    for q in &input.questions {
+        if let Some(qid) = q.id {
+            if !existing_ids.contains(&qid) {
+                return Ok(Err("invalid_question"));
+            }
+            kept_ids.push(qid);
+        }
+    }
+
+    sqlx::query(&format!(
+        "DELETE FROM {table}
+         WHERE bounty_id = $1
+           AND NOT (id = ANY($2))
+           AND NOT EXISTS (SELECT 1 FROM {attempts} a WHERE a.question_id = {table}.id)",
+        table = tables::BOUNTY_QUESTIONS,
+        attempts = tables::SUBMISSION_ATTEMPTS
+    ))
+    .bind(id)
+    .bind(&kept_ids)
+    .execute(&mut *tx)
+    .await?;
+
+    sqlx::query(&format!(
+        "UPDATE {table} SET order_index = order_index + 10000 WHERE bounty_id = $1",
+        table = tables::BOUNTY_QUESTIONS
+    ))
     .bind(id)
     .execute(&mut *tx)
     .await?;
+
+    for q in &input.questions {
+        if let Some(qid) = q.id {
+            sqlx::query(&format!(
+                "UPDATE {table}
+                 SET order_index = $1, question_type = $2::question_type, prompt = $3, options = $4,
+                     expected_answer_ciphertext = $5, encryption_key_id = $6, verification_method = $7::verification_method
+                 WHERE id = $8 AND bounty_id = $9",
+                table = tables::BOUNTY_QUESTIONS
+            ))
+            .bind(q.order_index)
+            .bind(&q.question_type)
+            .bind(&q.prompt)
+            .bind(&q.options)
+            .bind(&q.expected_answer_ciphertext)
+            .bind(&q.encryption_key_id)
+            .bind(&q.verification_method)
+            .bind(qid)
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+        } else {
+            let new_qid = Uuid::new_v4();
+            sqlx::query(&format!(
+                "INSERT INTO {table} (id, bounty_id, order_index, question_type, prompt, options, expected_answer_ciphertext, encryption_key_id, verification_method)
+                 VALUES ($1, $2, $3, $4::question_type, $5, $6, $7, $8, $9::verification_method)",
+                table = tables::BOUNTY_QUESTIONS
+            ))
+            .bind(new_qid)
+            .bind(id)
+            .bind(q.order_index)
+            .bind(&q.question_type)
+            .bind(&q.prompt)
+            .bind(&q.options)
+            .bind(&q.expected_answer_ciphertext)
+            .bind(&q.encryption_key_id)
+            .bind(&q.verification_method)
+            .execute(&mut *tx)
+            .await?;
+        }
+    }
     audit(
         &mut tx,
         Some(creator_id),
@@ -167,27 +240,98 @@ pub async fn close_past_deadline(pool: &PgPool, now: DateTime<Utc>) -> Result<()
     Ok(())
 }
 
+async fn load_questions_for_bounties(
+    pool: &PgPool,
+    bounty_ids: &[Uuid],
+) -> Result<
+    std::collections::HashMap<Uuid, Vec<crate::modules::bounties::dto::QuestionRecord>>,
+    sqlx::Error,
+> {
+    use std::collections::HashMap;
+    let mut map: HashMap<Uuid, Vec<crate::modules::bounties::dto::QuestionRecord>> = HashMap::new();
+    if bounty_ids.is_empty() {
+        return Ok(map);
+    }
+    let rows = sqlx::query(&format!(
+        "SELECT id, bounty_id, order_index, question_type::text, prompt, options,
+                expected_answer_ciphertext, encryption_key_id, verification_method::text
+         FROM {table}
+         WHERE bounty_id = ANY($1)
+         ORDER BY order_index ASC",
+        table = tables::BOUNTY_QUESTIONS
+    ))
+    .bind(bounty_ids)
+    .fetch_all(pool)
+    .await?;
+    for r in rows {
+        let b_id: Uuid = r.get("bounty_id");
+        let q_id: Uuid = r.get("id");
+        map.entry(b_id)
+            .or_default()
+            .push(crate::modules::bounties::dto::QuestionRecord {
+                id: q_id.to_string(),
+                order_index: r.get("order_index"),
+                question_type: r.get("question_type"),
+                prompt: r.get("prompt"),
+                options: r.get("options"),
+                expected_answer_ciphertext: r.get("expected_answer_ciphertext"),
+                encryption_key_id: r.get("encryption_key_id"),
+                verification_method: r.get("verification_method"),
+            });
+    }
+    Ok(map)
+}
+
+fn to_public_questions(
+    questions: &[crate::modules::bounties::dto::QuestionRecord],
+) -> Vec<crate::modules::bounties::dto::PublicQuestionRecord> {
+    questions
+        .iter()
+        .map(|q| crate::modules::bounties::dto::PublicQuestionRecord {
+            id: q.id.clone(),
+            order_index: q.order_index,
+            question_type: q.question_type.clone(),
+            prompt: q.prompt.clone(),
+            options: q.options.clone(),
+        })
+        .collect()
+}
+
 pub async fn list_active(
     pool: &PgPool,
     now: DateTime<Utc>,
 ) -> Result<Vec<PublicBountyRecord>, sqlx::Error> {
     close_past_deadline(pool, now).await?;
     let rows = sqlx::query(&format!(
-        "SELECT b.id, b.title, b.description, b.instructions, b.category::text, b.status::text,
+        "SELECT DISTINCT ON (b.id) b.id, b.title, b.description, b.instructions, b.category::text, b.status::text,
          b.reward_lamports, b.max_rewarded_solvers, b.attempt_limit, b.deadline, b.close_reason::text,
          q.prompt, q.verification_method::text,
          (SELECT COUNT(*)::int FROM reward_allocations a WHERE a.bounty_id = b.id) AS rewarded_count
          FROM {bounties} b
          JOIN {questions} q ON q.bounty_id = b.id
          WHERE b.status = 'active'::bounty_status AND b.deadline > $1
-         ORDER BY b.deadline ASC",
+         ORDER BY b.id, q.order_index ASC",
         bounties = tables::BOUNTIES,
         questions = tables::BOUNTY_QUESTIONS
     ))
     .bind(now)
     .fetch_all(pool)
     .await?;
-    Ok(rows.iter().map(read_public_row).collect())
+    let ids: Vec<Uuid> = rows.iter().map(|r| r.get::<Uuid, _>("id")).collect();
+    let q_map = load_questions_for_bounties(pool, &ids).await?;
+    let mut out: Vec<PublicBountyRecord> = rows
+        .iter()
+        .map(|r| {
+            let mut rec = read_public_row(r);
+            let b_id: Uuid = r.get("id");
+            if let Some(qs) = q_map.get(&b_id) {
+                rec.questions = to_public_questions(qs);
+            }
+            rec
+        })
+        .collect();
+    out.sort_by_key(|b| b.deadline);
+    Ok(out)
 }
 
 pub async fn find_public(
@@ -211,14 +355,24 @@ pub async fn find_public(
          (SELECT COUNT(*)::int FROM reward_allocations a WHERE a.bounty_id = b.id) AS rewarded_count
          FROM {bounties} b
          JOIN {questions} q ON q.bounty_id = b.id
-         WHERE b.id = $1 AND b.status NOT IN ('draft'::bounty_status, 'funding_pending'::bounty_status)",
+         WHERE b.id = $1 AND b.status NOT IN ('draft'::bounty_status, 'funding_pending'::bounty_status)
+         ORDER BY q.order_index ASC
+         LIMIT 1",
         bounties = tables::BOUNTIES,
         questions = tables::BOUNTY_QUESTIONS
     ))
     .bind(id)
     .fetch_optional(pool)
     .await?;
-    Ok(row.map(|r| read_public_row(&r)))
+    let Some(r) = row else {
+        return Ok(None);
+    };
+    let mut rec = read_public_row(&r);
+    let q_map = load_questions_for_bounties(pool, &[id]).await?;
+    if let Some(qs) = q_map.get(&id) {
+        rec.questions = to_public_questions(qs);
+    }
+    Ok(Some(rec))
 }
 
 pub struct FundingSnapshot {
@@ -338,7 +492,7 @@ pub enum ApplyFundingResult {
     Missing,
     SignatureInUse,
     AlreadyConfirmed,
-    Applied(FundingSnapshot),
+    Applied(Box<FundingSnapshot>),
 }
 
 pub async fn apply_funding(
@@ -369,7 +523,7 @@ pub async fn apply_funding(
         if existing_sig.as_deref() == Some(&input.signature) {
             tx.commit().await?;
             let snap = load_funding_snapshot(pool, input.bounty_id, input.creator_id).await?;
-            return Ok(ApplyFundingResult::Applied(snap));
+            return Ok(ApplyFundingResult::Applied(Box::new(snap)));
         }
         return Ok(ApplyFundingResult::AlreadyConfirmed);
     }
@@ -477,7 +631,7 @@ pub async fn apply_funding(
     .await?;
     tx.commit().await?;
     let snap = load_funding_snapshot(pool, input.bounty_id, input.creator_id).await?;
-    Ok(ApplyFundingResult::Applied(snap))
+    Ok(ApplyFundingResult::Applied(Box::new(snap)))
 }
 
 pub async fn activate_if_funded(
@@ -718,21 +872,41 @@ pub async fn verification_material(
     pool: &PgPool,
     session_id: Uuid,
     solver_id: Uuid,
-) -> Result<Option<(String, String)>, sqlx::Error> {
-    let row = sqlx::query(&format!(
-        "SELECT q.expected_answer_ciphertext, q.verification_method::text
-         FROM {sessions} s
-         JOIN {questions} q ON q.bounty_id = s.bounty_id
-         WHERE s.id = $1 AND s.solver_id = $2",
-        sessions = tables::SOLVING_SESSIONS,
-        questions = tables::BOUNTY_QUESTIONS
-    ))
-    .bind(session_id)
-    .bind(solver_id)
-    .fetch_optional(pool)
-    .await?;
+    question_id: Option<Uuid>,
+) -> Result<Option<(Uuid, String, String)>, sqlx::Error> {
+    let row = if let Some(qid) = question_id {
+        sqlx::query(&format!(
+            "SELECT q.id, q.expected_answer_ciphertext, q.verification_method::text
+             FROM {sessions} s
+             JOIN {questions} q ON q.bounty_id = s.bounty_id
+             WHERE s.id = $1 AND s.solver_id = $2 AND q.id = $3",
+            sessions = tables::SOLVING_SESSIONS,
+            questions = tables::BOUNTY_QUESTIONS
+        ))
+        .bind(session_id)
+        .bind(solver_id)
+        .bind(qid)
+        .fetch_optional(pool)
+        .await?
+    } else {
+        sqlx::query(&format!(
+            "SELECT q.id, q.expected_answer_ciphertext, q.verification_method::text
+             FROM {sessions} s
+             JOIN {questions} q ON q.bounty_id = s.bounty_id
+             WHERE s.id = $1 AND s.solver_id = $2
+             ORDER BY q.order_index ASC
+             LIMIT 1",
+            sessions = tables::SOLVING_SESSIONS,
+            questions = tables::BOUNTY_QUESTIONS
+        ))
+        .bind(session_id)
+        .bind(solver_id)
+        .fetch_optional(pool)
+        .await?
+    };
     Ok(row.map(|r| {
         (
+            r.get("id"),
             r.get("expected_answer_ciphertext"),
             r.get("verification_method"),
         )
@@ -744,13 +918,14 @@ pub enum SubmitAnswerResult {
     Completed,
     Inactive,
     Limit,
-    Stored(StoredSession),
+    Stored(Box<StoredSession>),
 }
 
 pub async fn submit_answer(
     pool: &PgPool,
     session_id: Uuid,
     solver_id: Uuid,
+    question_id: Uuid,
     answer: &str,
     now: DateTime<Utc>,
     correct: bool,
@@ -793,21 +968,22 @@ pub async fn submit_answer(
     if b_status != "active" {
         return Ok(SubmitAnswerResult::Inactive);
     }
-    let prior: i64 = sqlx::query_scalar(&format!(
+    let total_prior: i64 = sqlx::query_scalar(&format!(
         "SELECT COUNT(*) FROM {table} WHERE session_id = $1",
         table = tables::SUBMISSION_ATTEMPTS
     ))
     .bind(session_id)
     .fetch_one(&mut *tx)
     .await?;
-    if prior >= attempt_limit as i64 {
-        sqlx::query(&format!(
-            "UPDATE {table} SET status = 'completed'::solving_session_status WHERE id = $1",
-            table = tables::SOLVING_SESSIONS
-        ))
-        .bind(session_id)
-        .execute(&mut *tx)
-        .await?;
+    let question_prior: i64 = sqlx::query_scalar(&format!(
+        "SELECT COUNT(*) FROM {table} WHERE session_id = $1 AND (question_id = $2 OR question_id IS NULL)",
+        table = tables::SUBMISSION_ATTEMPTS
+    ))
+    .bind(session_id)
+    .bind(question_id)
+    .fetch_one(&mut *tx)
+    .await?;
+    if question_prior >= attempt_limit as i64 {
         return Ok(SubmitAnswerResult::Limit);
     }
     let buckets = load_buckets_tx(&mut tx, bounty_id).await?;
@@ -837,13 +1013,14 @@ pub async fn submit_answer(
     };
     let attempt_id = Uuid::new_v4();
     sqlx::query(&format!(
-        "INSERT INTO {table} (id, session_id, attempt_number, submitted_answer, is_correct, ineligibility_reason, submitted_at)
-         VALUES ($1, $2, $3, $4, $5, $6::ineligibility_reason, $7)",
+        "INSERT INTO {table} (id, session_id, question_id, attempt_number, submitted_answer, is_correct, ineligibility_reason, submitted_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7::ineligibility_reason, $8)",
         table = tables::SUBMISSION_ATTEMPTS
     ))
     .bind(attempt_id)
     .bind(session_id)
-    .bind(prior as i32 + 1)
+    .bind(question_id)
+    .bind(total_prior as i32 + 1)
     .bind(answer)
     .bind(correct)
     .bind(ineligibility)
@@ -907,7 +1084,7 @@ pub async fn submit_answer(
         .execute(&mut *tx)
         .await?;
         reserved = true;
-    } else if correct || prior + 1 >= attempt_limit as i64 {
+    } else if correct || question_prior + 1 >= attempt_limit as i64 {
         sqlx::query(&format!(
             "UPDATE {table} SET status = 'completed'::solving_session_status WHERE id = $1",
             table = tables::SOLVING_SESSIONS
@@ -930,7 +1107,7 @@ pub async fn submit_answer(
         if let Some(last) = s.attempts.last_mut() {
             last.reward_reserved = reserved;
         }
-        Ok(SubmitAnswerResult::Stored(s))
+        Ok(SubmitAnswerResult::Stored(Box::new(s)))
     } else {
         Ok(SubmitAnswerResult::Missing)
     }
@@ -1026,6 +1203,7 @@ async fn load_owner(
     if creator_id.is_some() {
         query.push_str(" AND b.creator_id = $2");
     }
+    query.push_str(" ORDER BY q.order_index ASC LIMIT 1");
     let row = if let Some(cid) = creator_id {
         sqlx::query(&query)
             .bind(id)
@@ -1035,7 +1213,12 @@ async fn load_owner(
     } else {
         sqlx::query(&query).bind(id).fetch_one(pool).await?
     };
-    Ok(read_owner_row(&row))
+    let mut owner = read_owner_row(&row);
+    let q_map = load_questions_for_bounties(pool, &[id]).await?;
+    if let Some(qs) = q_map.get(&id) {
+        owner.questions = qs.clone();
+    }
+    Ok(owner)
 }
 
 fn read_owner_row(row: &sqlx::postgres::PgRow) -> OwnerBounty {
@@ -1055,6 +1238,7 @@ fn read_owner_row(row: &sqlx::postgres::PgRow) -> OwnerBounty {
         expected_answer_ciphertext: row.get("expected_answer_ciphertext"),
         encryption_key_id: row.get("encryption_key_id"),
         verification_method: row.get("verification_method"),
+        questions: Vec::new(),
     }
 }
 
@@ -1074,6 +1258,7 @@ fn read_public_row(row: &sqlx::postgres::PgRow) -> PublicBountyRecord {
         deadline: row.get("deadline"),
         close_reason: row.get("close_reason"),
         rewarded_count: row.get("rewarded_count"),
+        questions: Vec::new(),
     }
 }
 
