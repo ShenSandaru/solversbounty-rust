@@ -943,6 +943,7 @@ pub async fn submit_answer(
     answer: &str,
     now: DateTime<Utc>,
     correct: bool,
+    is_manual: bool,
 ) -> Result<SubmitAnswerResult, sqlx::Error> {
     let mut tx = pool.begin().await?;
     let session_row: Option<(Uuid, String)> = sqlx::query_as(&format!(
@@ -1026,9 +1027,10 @@ pub async fn submit_answer(
         _ => None,
     };
     let attempt_id = Uuid::new_v4();
+    let manual_status: Option<&str> = if is_manual { Some("pending") } else { None };
     sqlx::query(&format!(
-        "INSERT INTO {table} (id, session_id, question_id, attempt_number, submitted_answer, is_correct, ineligibility_reason, submitted_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7::ineligibility_reason, $8)",
+        "INSERT INTO {table} (id, session_id, question_id, attempt_number, submitted_answer, is_correct, manual_review_status, ineligibility_reason, submitted_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7::manual_review_status, $8::ineligibility_reason, $9)",
         table = tables::SUBMISSION_ATTEMPTS
     ))
     .bind(attempt_id)
@@ -1037,6 +1039,7 @@ pub async fn submit_answer(
     .bind(total_prior as i32 + 1)
     .bind(answer)
     .bind(correct)
+    .bind(manual_status)
     .bind(ineligibility)
     .bind(now)
     .execute(&mut *tx)
@@ -1461,4 +1464,185 @@ async fn audit(
 pub fn expected_funding_amounts(reward_lamports: i64, max_solvers: i32) -> (i64, i64) {
     let pool = principal_lamports(reward_lamports, max_solvers);
     (pool, commission_lamports(pool))
+}
+
+pub struct PendingReviewRow {
+    pub attempt_id: String,
+    pub bounty_id: String,
+    pub bounty_title: String,
+    pub question_prompt: String,
+    pub submitted_answer: String,
+    pub submitted_at: DateTime<Utc>,
+    pub manual_review_status: String,
+}
+
+pub async fn list_pending_reviews(
+    pool: &PgPool,
+    creator_id: Uuid,
+) -> Result<Vec<PendingReviewRow>, sqlx::Error> {
+    let rows = sqlx::query(&format!(
+        "SELECT a.id AS attempt_id, b.id AS bounty_id, b.title AS bounty_title,
+                COALESCE(q.prompt, '') AS question_prompt, a.submitted_answer, a.submitted_at,
+                a.manual_review_status::text AS manual_review_status
+         FROM {attempts} a
+         JOIN {sessions} s ON s.id = a.session_id
+         JOIN {bounties} b ON b.id = s.bounty_id
+         LEFT JOIN {questions} q ON q.id = a.question_id
+         WHERE b.creator_id = $1 AND a.manual_review_status = 'pending'::manual_review_status
+         ORDER BY a.submitted_at ASC",
+        attempts = tables::SUBMISSION_ATTEMPTS,
+        sessions = tables::SOLVING_SESSIONS,
+        bounties = tables::BOUNTIES,
+        questions = tables::BOUNTY_QUESTIONS
+    ))
+    .bind(creator_id)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows
+        .into_iter()
+        .map(|r| PendingReviewRow {
+            attempt_id: r.get::<Uuid, _>("attempt_id").to_string(),
+            bounty_id: r.get::<Uuid, _>("bounty_id").to_string(),
+            bounty_title: r.get("bounty_title"),
+            question_prompt: r.get("question_prompt"),
+            submitted_answer: r.get("submitted_answer"),
+            submitted_at: r.get("submitted_at"),
+            manual_review_status: r.get("manual_review_status"),
+        })
+        .collect())
+}
+
+pub enum ReviewOutcome {
+    Missing,
+    AlreadyReviewed,
+    Updated { reward_reserved: bool },
+}
+
+pub async fn review_submission(
+    pool: &PgPool,
+    attempt_id: Uuid,
+    creator_id: Uuid,
+    approve: bool,
+    now: DateTime<Utc>,
+) -> Result<ReviewOutcome, sqlx::Error> {
+    let mut tx = pool.begin().await?;
+    let row: Option<(Uuid, Uuid, Option<String>, i32, i64)> = sqlx::query_as(&format!(
+        "SELECT s.bounty_id, s.solver_id, a.manual_review_status::text, b.max_rewarded_solvers, b.reward_lamports
+         FROM {attempts} a
+         JOIN {sessions} s ON s.id = a.session_id
+         JOIN {bounties} b ON b.id = s.bounty_id
+         WHERE a.id = $1 AND b.creator_id = $2",
+        attempts = tables::SUBMISSION_ATTEMPTS,
+        sessions = tables::SOLVING_SESSIONS,
+        bounties = tables::BOUNTIES
+    ))
+    .bind(attempt_id)
+    .bind(creator_id)
+    .fetch_optional(&mut *tx)
+    .await?;
+
+    let Some((bounty_id, solver_id, status_opt, max_solvers, reward_lamports)) = row else {
+        return Ok(ReviewOutcome::Missing);
+    };
+    if status_opt.as_deref() != Some("pending") {
+        return Ok(ReviewOutcome::AlreadyReviewed);
+    }
+
+    lock_bounty(&mut tx, bounty_id).await?;
+
+    if !approve {
+        sqlx::query(&format!(
+            "UPDATE {table} SET is_correct = false, manual_review_status = 'rejected'::manual_review_status WHERE id = $1",
+            table = tables::SUBMISSION_ATTEMPTS
+        ))
+        .bind(attempt_id)
+        .execute(&mut *tx)
+        .await?;
+        audit(&mut tx, Some(creator_id), "submission.rejected", "submission_attempt", attempt_id).await?;
+        tx.commit().await?;
+        return Ok(ReviewOutcome::Updated { reward_reserved: false });
+    }
+
+    let already_allocated: bool = sqlx::query_scalar(&format!(
+        "SELECT EXISTS(SELECT 1 FROM {table} WHERE bounty_id = $1 AND solver_id = $2)",
+        table = tables::REWARD_ALLOCATIONS
+    ))
+    .bind(bounty_id)
+    .bind(solver_id)
+    .fetch_one(&mut *tx)
+    .await?;
+
+    let mut reserved = false;
+    let mut ineligibility: Option<&str> = None;
+    if !already_allocated {
+        let buckets = load_buckets_tx(&mut tx, bounty_id).await?;
+        let allocation_count: i64 = sqlx::query_scalar(&format!(
+            "SELECT COUNT(*) FROM {table} WHERE bounty_id = $1",
+            table = tables::REWARD_ALLOCATIONS
+        ))
+        .bind(bounty_id)
+        .fetch_one(&mut *tx)
+        .await?;
+        match capacity_decision(allocation_count as i32, max_solvers, buckets.refundable, reward_lamports) {
+            CapacityDecision::Reserve => {
+                let allocation_id = Uuid::new_v4();
+                sqlx::query(&format!(
+                    "INSERT INTO {table} (id, bounty_id, solver_id, attempt_id, amount_lamports, status)
+                     VALUES ($1, $2, $3, $4, $5, 'reserved'::allocation_status)",
+                    table = tables::REWARD_ALLOCATIONS
+                ))
+                .bind(allocation_id)
+                .bind(bounty_id)
+                .bind(solver_id)
+                .bind(attempt_id)
+                .bind(reward_lamports)
+                .execute(&mut *tx)
+                .await?;
+                let payout_id = Uuid::new_v4();
+                sqlx::query(&format!(
+                    "INSERT INTO {table} (id, allocation_id, idempotency_key, status, updated_at)
+                     VALUES ($1, $2, $3, 'pending'::payout_status, $4)",
+                    table = tables::PAYOUTS
+                ))
+                .bind(payout_id)
+                .bind(allocation_id)
+                .bind(format!("payout:{allocation_id}"))
+                .bind(now)
+                .execute(&mut *tx)
+                .await?;
+                sqlx::query(&format!(
+                    "INSERT INTO {table} (id, bounty_id, entry_type, amount_lamports, payout_id)
+                     VALUES ($1, $2, 'reserve'::ledger_entry_type, $3, $4)",
+                    table = tables::BOUNTY_LEDGER_ENTRIES
+                ))
+                .bind(Uuid::new_v4())
+                .bind(bounty_id)
+                .bind(reward_lamports)
+                .bind(payout_id)
+                .execute(&mut *tx)
+                .await?;
+                reserved = true;
+            }
+            CapacityDecision::Reject(CapacityReason::PoolExhausted) => ineligibility = Some("pool_exhausted"),
+            CapacityDecision::Reject(CapacityReason::InsufficientRefundable) => {
+                ineligibility = Some("insufficient_refundable")
+            }
+        }
+    }
+
+    sqlx::query(&format!(
+        "UPDATE {table}
+         SET is_correct = true, manual_review_status = 'approved'::manual_review_status,
+             ineligibility_reason = $1::ineligibility_reason
+         WHERE id = $2",
+        table = tables::SUBMISSION_ATTEMPTS
+    ))
+    .bind(ineligibility)
+    .bind(attempt_id)
+    .execute(&mut *tx)
+    .await?;
+
+    audit(&mut tx, Some(creator_id), "submission.approved", "submission_attempt", attempt_id).await?;
+    tx.commit().await?;
+    Ok(ReviewOutcome::Updated { reward_reserved: reserved })
 }

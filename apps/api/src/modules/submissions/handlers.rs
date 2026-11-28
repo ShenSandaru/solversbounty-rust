@@ -140,8 +140,13 @@ pub async fn submit_answer(
         .map_err(|_| ApiError::internal())?
         .ok_or_else(|| ApiError::not_found("Solving session not found."))?;
     let method = VerificationMethod::from_db(&material.2).ok_or_else(ApiError::internal)?;
-    let expected = decrypt_answer(&material.1, &key).map_err(|_| ApiError::internal())?;
-    let correct = answers_match(method, &expected, &answer);
+    let is_manual = method == VerificationMethod::Manual;
+    let correct = if is_manual {
+        false
+    } else {
+        let expected = decrypt_answer(&material.1, &key).map_err(|_| ApiError::internal())?;
+        answers_match(method, &expected, &answer)
+    };
     let saved = repo::submit_answer(
         pool,
         session_id,
@@ -150,6 +155,7 @@ pub async fn submit_answer(
         &answer,
         Utc::now(),
         correct,
+        is_manual,
     )
     .await
     .map_err(|_| ApiError::internal())?;
@@ -186,4 +192,67 @@ fn parse_uuid(value: &str) -> ApiResult<Uuid> {
 #[allow(dead_code)]
 pub fn consent_version() -> &'static str {
     RESEARCH_CONSENT_VERSION
+}
+
+pub async fn pending_reviews(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> ApiResult<Json<Value>> {
+    let pool = state.require_pool()?;
+    let user = resolve_auth_user(pool, &headers).await?;
+    let rows = repo::list_pending_reviews(pool, user.id)
+        .await
+        .map_err(|_| ApiError::internal())?;
+    let items: Vec<Value> = rows
+        .into_iter()
+        .map(|r| {
+            serde_json::json!({
+                "attemptId": r.attempt_id,
+                "bountyId": r.bounty_id,
+                "bountyTitle": r.bounty_title,
+                "questionPrompt": r.question_prompt,
+                "submittedAnswer": r.submitted_answer,
+                "submittedAt": r.submitted_at.to_rfc3339(),
+                "manualReviewStatus": r.manual_review_status,
+            })
+        })
+        .collect();
+    Ok(Json(Value::Array(items)))
+}
+
+pub async fn review_submission(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    headers: HeaderMap,
+    Json(body): Json<Value>,
+) -> ApiResult<Json<Value>> {
+    let pool = state.require_pool()?;
+    require_csrf(&headers)?;
+    let user = resolve_auth_user(pool, &headers).await?;
+    let attempt_id = parse_uuid(&id)?;
+    let decision = body.get("decision").and_then(|v| v.as_str()).unwrap_or("");
+    let approve = match decision {
+        "approved" => true,
+        "rejected" => false,
+        _ => return Err(ApiError::validation("Decision must be approved or rejected.", vec![])),
+    };
+    let outcome = repo::review_submission(pool, attempt_id, user.id, approve, Utc::now())
+        .await
+        .map_err(|_| ApiError::internal())?;
+    match outcome {
+        repo::ReviewOutcome::Missing => Err(ApiError::not_found("Submission not found.")),
+        repo::ReviewOutcome::AlreadyReviewed => {
+            Err(ApiError::conflict("This submission has already been reviewed."))
+        }
+        repo::ReviewOutcome::Updated { reward_reserved } => {
+            if reward_reserved {
+                state.payout_worker.nudge().await;
+            }
+            Ok(Json(serde_json::json!({
+                "attemptId": attempt_id.to_string(),
+                "decision": decision,
+                "rewardReserved": reward_reserved,
+            })))
+        }
+    }
 }

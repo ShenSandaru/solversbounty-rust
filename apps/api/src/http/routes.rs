@@ -42,6 +42,8 @@ pub fn router(state: AppState) -> Router {
         .route("/bounties/{id}/analytics", get(bounties::bounty_analytics))
         .route("/sessions/{id}", get(submissions::read_session))
         .route("/sessions/{id}/result", get(submissions::session_result))
+        .route("/reviews/pending", get(submissions::pending_reviews))
+        .route("/submissions/{id}/review", post(submissions::review_submission))
         .route(
             "/sessions/{id}/submissions",
             post(submissions::submit_answer),

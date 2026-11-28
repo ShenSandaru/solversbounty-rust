@@ -16,7 +16,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { categoryLabels, difficultyLabels, verificationMethodLabels } from "@/lib/labels";
+import {
+  categoryLabels,
+  difficultyLabels,
+  questionTypeLabels,
+  statusLabels,
+} from "@/lib/labels";
 import { useAuthSession } from "@/features/auth/auth-session";
 import { apiBaseUrl } from "@/features/auth/auth-client";
 import { BountyClientError, bountyWriteBody, createBounty, updateBounty, type BountyDraft } from "./bounty-api";
@@ -25,8 +30,23 @@ import { CreatorStepper } from "./creator-stepper";
 import { QuestionListEditor } from "./question-list-editor";
 
 const categories = Object.entries(categoryLabels) as [BountyCategory, string][];
-const methods = Object.entries(verificationMethodLabels) as [VerificationMethod, string][];
 const difficulties = Object.entries(difficultyLabels);
+
+const WIZARD_STEPS = [
+  { id: "details", label: "Challenge Details" },
+  { id: "questions", label: "Questions" },
+  { id: "rules", label: "Rules & Participation" },
+  { id: "rewards", label: "Rewards & Funding" },
+  { id: "review", label: "Review & Preview" },
+] as const;
+
+const STEP_FIELDS: (keyof CreateBountyFormValues)[][] = [
+  ["title", "description", "instructions", "category", "difficulty"],
+  ["questions"],
+  ["attemptLimit", "deadline", "consentAcknowledged"],
+  ["rewardSol", "maxRewardedSolvers"],
+  [],
+];
 
 export function CreateBountyForm({
   bountyId,
@@ -36,6 +56,7 @@ export function CreateBountyForm({
   initial?: Partial<CreateBountyFormValues>;
 }) {
   const { session } = useAuthSession();
+  const [step, setStep] = useState(0);
   const [saved, setSaved] = useState<BountyDraft | null>(null);
   const [phase, setPhase] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
@@ -85,9 +106,52 @@ export function CreateBountyForm({
       ? null
       : formatLamportsAsSol(principalValue + commissionValue);
 
+  const handleNext = async () => {
+    const fields = STEP_FIELDS[step] ?? [];
+    const valid = fields.length === 0 ? true : await form.trigger(fields);
+    if (valid) {
+      setStep((prev) => Math.min(prev + 1, WIZARD_STEPS.length - 1));
+    }
+  };
+
+  const handleBack = () => {
+    setStep((prev) => Math.max(prev - 1, 0));
+  };
+
+  const values = useWatch({ control: form.control });
+
   return (
     <div className="mt-6">
       <CreatorStepper current={saved && phase === "saved" ? "fund" : "draft"} isSignedIn={Boolean(session)} bountyId={saved?.id ?? bountyId} />
+      <nav aria-label="Wizard steps" className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-5">
+        {WIZARD_STEPS.map((item, idx) => {
+          const isCurrent = idx === step;
+          const isCompleted = idx < step;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => {
+                if (idx <= step) setStep(idx);
+              }}
+              disabled={idx > step}
+              aria-current={isCurrent ? "step" : undefined}
+              className={`rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+                isCurrent
+                  ? "border-[#9945FF] bg-[#9945FF]/15 font-semibold text-foreground"
+                  : isCompleted
+                    ? "border-[#14F195]/40 bg-[#22222B] text-foreground hover:border-[#14F195]"
+                    : "border-border/50 bg-[#111116] text-muted-foreground opacity-60"
+              }`}
+            >
+              <span className="block font-mono text-[10px] uppercase text-muted-foreground">
+                Step {idx + 1}
+              </span>
+              <span className="block truncate">{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
       {!session ? (
         <div className="mb-6 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm leading-6" role="status">
           <p className="font-medium text-foreground">Sign in with Phantom before saving</p>
@@ -127,8 +191,8 @@ export function CreateBountyForm({
         })(event);
       }}
     >
-      <section className="surface grid gap-4 p-5 sm:p-6">
-        <SectionHeading step="1" title="Challenge" />
+      <section className={`surface grid gap-4 p-5 sm:p-6 ${step === 0 ? "" : "hidden"}`}>
+        <SectionHeading step="1" title="Challenge Details" />
         <Field label="Bounty title" error={form.formState.errors.title?.message} htmlFor="title">
           <Input id="title" {...form.register("title")} />
         </Field>
@@ -179,11 +243,15 @@ export function CreateBountyForm({
             </Select>
           </Field>
         </div>
+      </section>
+
+      <section className={`surface grid gap-4 p-5 sm:p-6 ${step === 1 ? "" : "hidden"}`}>
+        <SectionHeading step="2" title="Questions" />
         <QuestionListEditor form={form} />
       </section>
 
-      <section className="surface grid gap-4 p-5 sm:p-6">
-        <SectionHeading step="2" title="Reward terms" />
+      <section className={`surface grid gap-4 p-5 sm:p-6 ${step === 3 ? "" : "hidden"}`}>
+        <SectionHeading step="4" title="Rewards & Funding" />
         <div className="grid gap-4 sm:grid-cols-3">
           <Field
             label="Reward per solver (SOL)"
@@ -268,11 +336,79 @@ export function CreateBountyForm({
         ) : null}
       </section>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Button type="submit" disabled={phase === "saving"}>
-          {phase === "saving" ? "Saving draft" : bountyId ? "Update draft" : "Save draft"}
+      {step === 4 ? (
+        <section className="surface grid gap-5 p-5 sm:p-6">
+          <SectionHeading step="5" title="Review & Solver Preview" />
+          <div className="rounded-xl border border-border bg-[#111116] p-4 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-base font-semibold">{values.title || "Untitled challenge"}</h3>
+              <span className="rounded-full border border-[#9945FF]/40 bg-[#9945FF]/15 px-2.5 py-0.5 text-xs text-[#d4b8ff]">
+                {values.category ? categoryLabels[values.category] : "Logic"}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{values.description}</p>
+            {values.instructions ? (
+              <p className="text-xs text-muted-foreground border-t border-border/50 pt-2">
+                Instructions: {values.instructions}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold">Solver Preview (expected answers hidden)</h4>
+            {(values.questions ?? []).map((q, idx) => (
+              <div key={idx} className="rounded-lg border border-border/70 bg-[#111116]/70 p-3 space-y-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Question {idx + 1}</span>
+                  <span>{q.questionType ? questionTypeLabels[q.questionType] : "Short answer"}</span>
+                </div>
+                <p className="text-sm text-foreground">{q.prompt || "No prompt entered."}</p>
+                {q.questionType === "multiple_choice" && q.options && q.options.length > 0 ? (
+                  <ul className="grid gap-1.5 sm:grid-cols-2 pt-1">
+                    {q.options.map((opt, optIdx) => (
+                      <li
+                        key={optIdx}
+                        className="rounded border border-border/60 bg-[#22222B] px-2.5 py-1.5 text-xs text-foreground"
+                      >
+                        {opt}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            ))}
+          </div>
+
+          <dl className="grid gap-3 rounded-xl border border-[#14F195]/25 bg-[#14F195]/[0.04] p-4 text-sm sm:grid-cols-3">
+            <div>
+              <dt className="text-muted-foreground">Reward pool</dt>
+              <dd className="font-mono text-[#14F195]">{principal ?? "—"} SOL</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">5% Commission</dt>
+              <dd className="font-mono">{commission ?? "—"} SOL</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Total funding</dt>
+              <dd className="font-mono font-semibold">{total ?? "—"} SOL</dd>
+            </div>
+          </dl>
+        </section>
+      ) : null}
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Button type="button" variant="outline" onClick={handleBack} disabled={step === 0}>
+          Back
         </Button>
-        <p className="text-sm text-muted-foreground">Saves a draft. It does not fund or activate the bounty.</p>
+        {step < WIZARD_STEPS.length - 1 ? (
+          <Button type="button" onClick={() => void handleNext()}>
+            Next
+          </Button>
+        ) : (
+          <Button type="submit" disabled={phase === "saving"}>
+            {phase === "saving" ? "Saving draft" : bountyId ? "Update draft" : "Save draft"}
+          </Button>
+        )}
       </div>
       {message ? (
         <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">

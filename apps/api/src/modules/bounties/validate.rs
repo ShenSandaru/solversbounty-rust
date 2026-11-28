@@ -338,7 +338,7 @@ fn valid_question_type(value: &str) -> bool {
 fn valid_verification(value: &str) -> bool {
     matches!(
         value,
-        "exact" | "case_insensitive" | "normalized_text" | "numeric_exact"
+        "exact" | "case_insensitive" | "normalized_text" | "numeric_exact" | "manual"
     )
 }
 

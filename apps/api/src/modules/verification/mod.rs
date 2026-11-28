@@ -4,6 +4,7 @@ pub enum VerificationMethod {
     CaseInsensitive,
     NormalizedText,
     NumericExact,
+    Manual,
 }
 
 impl VerificationMethod {
@@ -13,6 +14,7 @@ impl VerificationMethod {
             "case_insensitive" => Some(Self::CaseInsensitive),
             "normalized_text" => Some(Self::NormalizedText),
             "numeric_exact" => Some(Self::NumericExact),
+            "manual" => Some(Self::Manual),
             _ => None,
         }
     }
@@ -26,6 +28,7 @@ pub fn answers_match(method: VerificationMethod, expected: &str, submitted: &str
             normalize_space(submitted) == normalize_space(expected)
         }
         VerificationMethod::NumericExact => numeric_text(submitted) == numeric_text(expected),
+        VerificationMethod::Manual => false,
     }
 }
 
@@ -163,6 +166,7 @@ mod tests {
             "Option B",
             "Option A"
         ));
-        assert!(VerificationMethod::from_db("manual").is_none());
+        assert!(VerificationMethod::from_db("manual") == Some(VerificationMethod::Manual));
+        assert!(!answers_match(VerificationMethod::Manual, "Option B", "Option B"));
     }
 }

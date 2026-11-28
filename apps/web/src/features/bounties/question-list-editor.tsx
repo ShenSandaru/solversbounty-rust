@@ -1,9 +1,12 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import type { CreateQuestionInput } from "@solversbounty/shared";
+import { Plus, Upload } from "lucide-react";
+import { useState } from "react";
 import { useFieldArray, type UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import type { CreateBountyFormValues } from "./create-bounty-schema";
+import { CsvImportPanel } from "./csv-import-panel";
 import { QuestionEditor } from "./question-editor";
 
 export function QuestionListEditor({
@@ -11,6 +14,7 @@ export function QuestionListEditor({
 }: {
   form: UseFormReturn<CreateBountyFormValues>;
 }) {
+  const [showCsvImport, setShowCsvImport] = useState(false);
   const { fields, append, remove, swap } = useFieldArray({
     control: form.control,
     name: "questions",
@@ -65,11 +69,38 @@ export function QuestionListEditor({
             Add one or more questions. Order is preserved for solvers.
           </p>
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={handleAdd}>
-          <Plus className="mr-1.5 h-4 w-4" aria-hidden="true" />
-          Add Question
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowCsvImport((prev) => !prev)}
+          >
+            <Upload className="mr-1.5 h-4 w-4" aria-hidden="true" />
+            Import CSV
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleAdd}>
+            <Plus className="mr-1.5 h-4 w-4" aria-hidden="true" />
+            Add Question
+          </Button>
+        </div>
       </div>
+
+      {showCsvImport ? (
+        <CsvImportPanel
+          existingPrompts={(form.getValues("questions") ?? []).map((q) => q.prompt ?? "")}
+          onImport={(imported: CreateQuestionInput[]) => {
+            const startIndex = fields.length;
+            imported.forEach((q, offset) => {
+              append({
+                ...q,
+                orderIndex: startIndex + offset,
+              });
+            });
+          }}
+          onClose={() => setShowCsvImport(false)}
+        />
+      ) : null}
 
       {typeof rootError === "string" ? (
         <p className="text-sm text-destructive" role="alert">

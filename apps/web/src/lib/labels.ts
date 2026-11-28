@@ -21,7 +21,7 @@ export const verificationMethodLabels: Record<VerificationMethod, string> = {
   case_insensitive: "Case-insensitive match",
   normalized_text: "Normalized text",
   numeric_exact: "Exact numeric",
-  manual: "Manual Review (Coming Soon)",
+  manual: "Manual review",
 };
 
 export const selectableVerificationMethods = [
@@ -29,6 +29,7 @@ export const selectableVerificationMethods = [
   "case_insensitive",
   "normalized_text",
   "numeric_exact",
+  "manual",
 ] as const satisfies readonly VerificationMethod[];
 
 export const statusLabels: Record<BountyStatus, string> = {
