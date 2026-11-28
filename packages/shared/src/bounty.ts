@@ -45,6 +45,7 @@ export const publicQuestionSchema = z
 
 export const createQuestionInputSchema = z
   .object({
+    id: z.string().uuid().optional(),
     orderIndex: z.number().int().nonnegative().optional(),
     questionType: questionTypeSchema.default("short_answer"),
     prompt: z.string().trim().min(1, "Enter the challenge question.").max(5000),

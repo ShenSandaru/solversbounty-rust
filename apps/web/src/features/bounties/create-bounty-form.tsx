@@ -22,6 +22,7 @@ import { apiBaseUrl } from "@/features/auth/auth-client";
 import { BountyClientError, bountyWriteBody, createBounty, updateBounty, type BountyDraft } from "./bounty-api";
 import { createBountyFormSchema, type CreateBountyFormValues } from "./create-bounty-schema";
 import { CreatorStepper } from "./creator-stepper";
+import { QuestionListEditor } from "./question-list-editor";
 
 const categories = Object.entries(categoryLabels) as [BountyCategory, string][];
 const methods = Object.entries(verificationMethodLabels) as [VerificationMethod, string][];
@@ -49,6 +50,15 @@ export function CreateBountyForm({
       category: "logic",
       expectedAnswer: "",
       verificationMethod: "exact",
+      questions: [
+        {
+          orderIndex: 0,
+          questionType: "short_answer",
+          prompt: "",
+          expectedAnswer: "",
+          verificationMethod: "exact",
+        },
+      ],
       rewardSol: "",
       maxRewardedSolvers: 10,
       attemptLimit: 3,
@@ -168,28 +178,8 @@ export function CreateBountyForm({
               ))}
             </Select>
           </Field>
-          <Field
-            label="Verification method"
-            error={form.formState.errors.verificationMethod?.message}
-            htmlFor="verificationMethod"
-          >
-            <Select id="verificationMethod" {...form.register("verificationMethod")}>
-              {methods.map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-          </Field>
         </div>
-        <Field
-          label="Expected answer"
-          error={form.formState.errors.expectedAnswer?.message}
-          htmlFor="expectedAnswer"
-          hint="Sent only to the API, which stores it encrypted. Public lists do not include it."
-        >
-          <Input id="expectedAnswer" autoComplete="off" {...form.register("expectedAnswer")} />
-        </Field>
+        <QuestionListEditor form={form} />
       </section>
 
       <section className="surface grid gap-4 p-5 sm:p-6">

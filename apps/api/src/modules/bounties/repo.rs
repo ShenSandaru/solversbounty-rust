@@ -125,13 +125,27 @@ pub async fn update_draft(
         }
     }
 
-    sqlx::query(&format!(
-        "DELETE FROM {table}
-         WHERE bounty_id = $1
-           AND NOT (id = ANY($2))
-           AND NOT EXISTS (SELECT 1 FROM {attempts} a WHERE a.question_id = {table}.id)",
+    let has_locked_omitted: bool = sqlx::query_scalar(&format!(
+        "SELECT EXISTS(
+            SELECT 1 FROM {table} q
+            WHERE q.bounty_id = $1
+              AND NOT (q.id = ANY($2))
+              AND EXISTS (SELECT 1 FROM {attempts} a WHERE a.question_id = q.id)
+         )",
         table = tables::BOUNTY_QUESTIONS,
         attempts = tables::SUBMISSION_ATTEMPTS
+    ))
+    .bind(id)
+    .bind(&kept_ids)
+    .fetch_one(&mut *tx)
+    .await?;
+    if has_locked_omitted {
+        return Ok(Err("question_has_submissions"));
+    }
+
+    sqlx::query(&format!(
+        "DELETE FROM {table} WHERE bounty_id = $1 AND NOT (id = ANY($2))",
+        table = tables::BOUNTY_QUESTIONS
     ))
     .bind(id)
     .bind(&kept_ids)
@@ -139,7 +153,7 @@ pub async fn update_draft(
     .await?;
 
     sqlx::query(&format!(
-        "UPDATE {table} SET order_index = order_index + 10000 WHERE bounty_id = $1",
+        "UPDATE {table} SET order_index = -(order_index + 1) WHERE bounty_id = $1",
         table = tables::BOUNTY_QUESTIONS
     ))
     .bind(id)

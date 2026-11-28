@@ -145,15 +145,21 @@ pub async fn patch_bounty(
                 decrypted.push(ans);
             }
             let expected = decrypted.first().cloned().unwrap_or_default();
-            Ok(Json(crate::modules::bounties::dto::private_json_with_questions(
-                &row,
-                &expected,
-                &decrypted,
-            )))
+            Ok(Json(
+                crate::modules::bounties::dto::private_json_with_questions(
+                    &row, &expected, &decrypted,
+                ),
+            ))
         }
         Err("missing") => Err(ApiError::not_found("Bounty not found.")),
         Err("not_draft") => Err(ApiError::conflict("Only draft bounties can be edited.")),
-        Err("invalid_question") => Err(ApiError::validation("Question does not belong to this bounty.", vec![])),
+        Err("invalid_question") => Err(ApiError::validation(
+            "Question does not belong to this bounty.",
+            vec![],
+        )),
+        Err("question_has_submissions") => Err(ApiError::conflict(
+            "Cannot remove a question that already has submission attempts.",
+        )),
         Err(_) => Err(ApiError::internal()),
     }
 }

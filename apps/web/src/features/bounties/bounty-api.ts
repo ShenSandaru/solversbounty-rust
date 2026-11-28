@@ -1,5 +1,15 @@
-import { publicBountySchema, type PublicBounty, type VerificationMethod } from "@solversbounty/shared";
+import { publicBountySchema, type PublicBounty, type QuestionType, type VerificationMethod } from "@solversbounty/shared";
 import type { CreateBountyFormValues } from "./create-bounty-schema";
+
+export type BountyDraftQuestion = {
+  id: string;
+  orderIndex: number;
+  questionType: QuestionType;
+  prompt: string;
+  options?: string[] | null;
+  verificationMethod: VerificationMethod;
+  expectedAnswer: string;
+};
 
 export type BountyDraft = {
   id: string;
@@ -7,6 +17,7 @@ export type BountyDraft = {
   description: string;
   instructions: string;
   prompt: string;
+  questions?: BountyDraftQuestion[];
   category: CreateBountyFormValues["category"];
   verificationMethod: CreateBountyFormValues["verificationMethod"];
   expectedAnswer: string;
@@ -20,14 +31,25 @@ export type BountyDraft = {
   closeReason: string | null;
 };
 
+export type BountyWriteQuestion = {
+  id?: string;
+  orderIndex: number;
+  questionType: QuestionType;
+  prompt: string;
+  options?: string[];
+  expectedAnswer: string;
+  verificationMethod: VerificationMethod;
+};
+
 export type BountyWriteBody = {
   title: string;
   description: string;
   instructions: string;
-  prompt: string;
+  prompt?: string;
   category: CreateBountyFormValues["category"];
-  expectedAnswer: string;
-  verificationMethod: CreateBountyFormValues["verificationMethod"];
+  expectedAnswer?: string;
+  verificationMethod?: CreateBountyFormValues["verificationMethod"];
+  questions?: BountyWriteQuestion[];
   rewardSol: string;
   maxRewardedSolvers: number;
   attemptLimit: number;
@@ -36,14 +58,31 @@ export type BountyWriteBody = {
 
 export function bountyWriteBody(values: CreateBountyFormValues): BountyWriteBody {
   const deadline = new Date(values.deadline);
+  const questions =
+    values.questions && values.questions.length > 0
+      ? values.questions.map((q, index) => ({
+          ...(q.id ? { id: q.id } : {}),
+          orderIndex: q.orderIndex ?? index,
+          questionType: q.questionType ?? "short_answer",
+          prompt: q.prompt,
+          ...(q.questionType === "multiple_choice" && q.options ? { options: q.options } : {}),
+          expectedAnswer: q.expectedAnswer,
+          verificationMethod: q.verificationMethod,
+        }))
+      : undefined;
+
   return {
     title: values.title,
     description: values.description,
     instructions: values.instructions,
-    prompt: values.prompt,
+    ...(questions
+      ? { questions }
+      : {
+          prompt: values.prompt,
+          expectedAnswer: values.expectedAnswer,
+          verificationMethod: values.verificationMethod,
+        }),
     category: values.category,
-    expectedAnswer: values.expectedAnswer,
-    verificationMethod: values.verificationMethod,
     rewardSol: values.rewardSol,
     maxRewardedSolvers: values.maxRewardedSolvers,
     attemptLimit: values.attemptLimit,

@@ -89,6 +89,28 @@ function localDateTime(iso: string): string {
 function formValues(draft: BountyDraft): Partial<CreateBountyFormValues> {
   const reward = formatLamportsAsSol(BigInt(draft.rewardLamports));
   const deadline = localDateTime(draft.deadline);
+  const questions =
+    draft.questions && draft.questions.length > 0
+      ? [...draft.questions]
+          .sort((a, b) => a.orderIndex - b.orderIndex)
+          .map((q) => ({
+            id: q.id,
+            orderIndex: q.orderIndex,
+            questionType: q.questionType,
+            prompt: q.prompt,
+            ...(q.options ? { options: q.options } : {}),
+            expectedAnswer: q.expectedAnswer,
+            verificationMethod: q.verificationMethod,
+          }))
+      : [
+          {
+            orderIndex: 0,
+            questionType: "short_answer" as const,
+            prompt: draft.prompt,
+            expectedAnswer: draft.expectedAnswer,
+            verificationMethod: draft.verificationMethod ?? "exact",
+          },
+        ];
   return {
     title: draft.title,
     description: draft.description,
@@ -97,6 +119,7 @@ function formValues(draft: BountyDraft): Partial<CreateBountyFormValues> {
     category: draft.category,
     expectedAnswer: draft.expectedAnswer,
     verificationMethod: draft.verificationMethod,
+    questions,
     rewardSol: reward,
     maxRewardedSolvers: draft.maxRewardedSolvers,
     attemptLimit: draft.attemptLimit,

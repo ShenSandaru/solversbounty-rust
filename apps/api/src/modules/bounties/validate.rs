@@ -102,6 +102,7 @@ pub fn parse_create_input(
             input.verification_method.as_deref(),
         ) {
             vec![QuestionInput {
+                id: None,
                 order_index: Some(0),
                 question_type: Some("short_answer".into()),
                 prompt: p.to_string(),
@@ -283,10 +284,9 @@ pub fn parse_create_input(
         } else {
             None
         };
-        let parsed_id = q
-            .id
-            .as_deref()
-            .and_then(|raw| uuid::Uuid::parse_str(raw).ok());
+        let parsed_id =
+            q.id.as_deref()
+                .and_then(|raw| uuid::Uuid::parse_str(raw).ok());
         questions.push(QuestionWrite {
             id: parsed_id,
             order_index: q.order_index.unwrap_or(idx as i32),
@@ -432,5 +432,43 @@ mod tests {
             verification_method: "exact".into(),
         }]);
         assert!(parse_create_input(bad_ans, Utc::now(), |s| Ok(s.into())).is_err());
+    }
+
+    #[test]
+    fn rejects_invalid_question_id_and_duplicate_order_index() {
+        let mut bad_id = base_input();
+        bad_id.questions = Some(vec![QuestionInput {
+            id: Some("not-a-uuid".into()),
+            order_index: Some(0),
+            question_type: Some("short_answer".into()),
+            prompt: "Q1".into(),
+            options: None,
+            expected_answer: "A1".into(),
+            verification_method: "exact".into(),
+        }]);
+        assert!(parse_create_input(bad_id, Utc::now(), |s| Ok(s.into())).is_err());
+
+        let mut dup_order = base_input();
+        dup_order.questions = Some(vec![
+            QuestionInput {
+                id: None,
+                order_index: Some(0),
+                question_type: Some("short_answer".into()),
+                prompt: "Q1".into(),
+                options: None,
+                expected_answer: "A1".into(),
+                verification_method: "exact".into(),
+            },
+            QuestionInput {
+                id: None,
+                order_index: Some(0),
+                question_type: Some("short_answer".into()),
+                prompt: "Q2".into(),
+                options: None,
+                expected_answer: "A2".into(),
+                verification_method: "exact".into(),
+            },
+        ]);
+        assert!(parse_create_input(dup_order, Utc::now(), |s| Ok(s.into())).is_err());
     }
 }

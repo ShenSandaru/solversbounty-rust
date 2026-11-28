@@ -1,4 +1,13 @@
-import type { BountyCategory, BountyStatus, VerificationMethod } from "@solversbounty/shared";
+import type { BountyCategory, BountyStatus, QuestionType, VerificationMethod } from "@solversbounty/shared";
+
+export const questionTypeLabels: Record<QuestionType, string> = {
+  multiple_choice: "Multiple choice",
+  short_answer: "Short answer",
+  logic_puzzle: "Logic puzzle",
+  mathematics: "Mathematics",
+  numerical_pattern: "Numerical pattern",
+  cipher: "Cipher",
+};
 
 export const categoryLabels: Record<BountyCategory, string> = {
   logic: "Logic",
@@ -12,7 +21,15 @@ export const verificationMethodLabels: Record<VerificationMethod, string> = {
   case_insensitive: "Case-insensitive match",
   normalized_text: "Normalized text",
   numeric_exact: "Exact numeric",
+  manual: "Manual Review (Coming Soon)",
 };
+
+export const selectableVerificationMethods = [
+  "exact",
+  "case_insensitive",
+  "normalized_text",
+  "numeric_exact",
+] as const satisfies readonly VerificationMethod[];
 
 export const statusLabels: Record<BountyStatus, string> = {
   draft: "Draft",
